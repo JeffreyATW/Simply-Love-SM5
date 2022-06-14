@@ -21,8 +21,6 @@ local permitted_profile_settings = {
 	ComboFont        = "string",
 	HoldJudgment     = "string",
 	BackgroundFilter = "string",
-	ShowFaPlusWindow = "boolean",
-	ShowEXScore      = "boolean",
 
 	----------------------------------
 	-- "Advanced Modifiers"
@@ -52,10 +50,16 @@ local permitted_profile_settings = {
 	MissBecauseHeld      = "boolean",
 	NPSGraphAtTop        = "boolean",
 	JudgmentTilt         = "boolean",
+	ColumnCues           = "boolean",
+	DisplayScorebox      = "boolean",
+
 	ErrorBar             = "string",
 	ErrorBarUp           = "boolean",
 	ErrorBarMultiTick    = "boolean",
 
+	ShowFaPlusWindow = "boolean",
+	ShowEXScore      = "boolean",
+	ShowFaPlusPane   = "boolean",
 
 	----------------------------------
 	-- Profile Settings without OptionRows
@@ -154,6 +158,13 @@ SaveProfileCustom = function(profile, dir)
 			output.PlayerOptionsString = SL[pn].PlayerOptionsString
 
 			IniFile.WriteFile( path, {[theme_name]=output} )
+
+			-- Write to the ITL file if we need to.
+			-- The ITLData table will only contain data for memory cards.
+			if #SL[pn].ITLData ~= 0 then
+				WriteItlFile(dir, table.concat(SL[pn].ITLData, ""))
+			end
+
 			break
 		end
 	end

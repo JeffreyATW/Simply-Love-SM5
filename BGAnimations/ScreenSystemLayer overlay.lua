@@ -3,8 +3,8 @@
 
 local t = Def.ActorFrame{
 	InitCommand=function(self)
-		-- In case we loaded the theme with SRPG5 and had Rainbow Mode enabled, disable it.
-		if ThemePrefs.Get("VisualStyle") == "SRPG5" and ThemePrefs.Get("RainbowMode") == true then
+		-- In case we loaded the theme with SRPG6 and had Rainbow Mode enabled, disable it.
+		if ThemePrefs.Get("VisualStyle") == "SRPG6" and ThemePrefs.Get("RainbowMode") == true then
 			ThemePrefs.Set("RainbowMode", false)
 			ThemePrefs.Save()
 		end
@@ -38,8 +38,8 @@ local function CreditsText( player )
 
 				local screenName = screen:GetName()
 				if screenName == "ScreenTitleMenu" or screenName == "ScreenTitleJoin" or screenName == "ScreenLogo" then
-					if ThemePrefs.Get("VisualStyle") == "SRPG5" then
-						textColor = color(SL.SRPG5.TextColor)
+					if ThemePrefs.Get("VisualStyle") == "SRPG6" then
+						textColor = color(SL.SRPG6.TextColor)
 						shadowLength = 0.4
 					end
 				elseif (screen:GetName() == "ScreenEvaluationStage") or (screen:GetName() == "ScreenEvaluationNonstop") then
@@ -171,8 +171,8 @@ t[#t+1] = LoadFont("Common Footer")..{
 		local textColor = Color.White
 		local screenName = screen:GetName()
 		if screen ~= nil and (screenName == "ScreenTitleMenu" or screenName == "ScreenTitleJoin" or screenName == "ScreenLogo") then
-			if ThemePrefs.Get("VisualStyle") == "SRPG5" then
-				textColor = color(SL.SRPG5.TextColor)
+			if ThemePrefs.Get("VisualStyle") == "SRPG6" then
+				textColor = color(SL.SRPG6.TextColor)
 			end
 		end
 		self:diffuse(textColor)
@@ -199,11 +199,13 @@ local function LoadModules()
 			if loaded_module then
 				local status, ret = pcall(loaded_module)
 				if status then
-					for screenName, actor in pairs(ret) do
-						if modules[screenName] == nil then
-							modules[screenName] = {}
+					if ret ~= nil then
+						for screenName, actor in pairs(ret) do
+							if modules[screenName] == nil then
+								modules[screenName] = {}
+							end
+							modules[screenName][#modules[screenName]+1] = actor
 						end
-						modules[screenName][#modules[screenName]+1] = actor
 					end
 				else
 					lua.ReportScriptError("Error executing module: "..full_path.." with error:\n    "..ret)
@@ -344,13 +346,24 @@ local NewSessionRequestProcessor = function(res, gsInfo)
 	local events = data["activeEvents"]
 	local easter_eggs = PREFSMAN:GetPreference("EasterEggs")
 	local game = GAMESTATE:GetCurrentGame():GetName()
+	local style = ThemePrefs.Get("VisualStyle")
 	if events ~= nil and easter_eggs and game == "dance" then
 		local last_active_event = ThemePrefs.Get("LastActiveEvent")
 
 		for event in ivalues(events) do
-			if event["shortName"] == "SRPG5" and last_active_event ~= "SRPG5" then
-				SL.SRPG5:ActivateVisualStyle()
-				break
+			if event["shortName"] == "SRPG6" then
+				-- If we're already on the SRPG6 theme, then set the last_active_event
+				-- if it's not already set to SRPG so that we don't bring up the prompt.
+				if last_active_event ~= "SRPG6" and style == "SRPG6" then
+					ThemePrefs.Set("LastActiveEvent", "SRPG6")
+					last_active_event = "SRPG6"
+				end
+			
+				if last_active_event ~= "SRPG6" then
+					local top_screen = SCREENMAN:GetTopScreen()
+					top_screen:SetNextScreenName("ScreenPromptToSetSrpgVisualStyle"):StartTransitioningScreen("SM_GoToNextScreen")
+					break
+				end
 			end
 		end
 	end
@@ -382,8 +395,8 @@ local function DiffuseText(bmt)
 	if ThemePrefs.Get("RainbowMode") and not HolidayCheer() then
 		textColor = Color.Black
 	end
-	if ThemePrefs.Get("VisualStyle") == "SRPG5" then
-		textColor = color(SL.SRPG5.TextColor)
+	if ThemePrefs.Get("VisualStyle") == "SRPG6" then
+		textColor = color(SL.SRPG6.TextColor)
 		shadowLength = 0.4
 	end
 
@@ -457,6 +470,11 @@ t[#t+1] = Def.ActorFrame{
 	RequestResponseActor("NewSession", 10, 5, 0)..{
 		NewSessionRequestMessageCommand=function(self)
 			if SL.GrooveStats.Launcher then
+				-- These default to false, but may have changed throughout the game's lifetime.
+				-- Reset these variable before making a request.
+				SL.GrooveStats.GetScores = false
+				SL.GrooveStats.Leaderboard = false
+				SL.GrooveStats.AutoSubmit = false
 				MESSAGEMAN:Broadcast("NewSession", {
 					data={action="groovestats/new-session", ChartHashVersion=SL.GrooveStats.ChartHashVersion},
 					args=self:GetParent(),

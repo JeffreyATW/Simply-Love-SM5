@@ -52,7 +52,7 @@ end
 
 DetermineTimingWindow = function(offset)
 	for i=1,NumJudgmentsAvailable() do
-		if math.abs(offset) < GetTimingWindow(i) then
+		if math.abs(offset) <= GetTimingWindow(i) then
 			return i
 		end
 	end
@@ -317,10 +317,6 @@ SetGameModePreferences = function()
 	-- so turn Decents and WayOffs off now.
 	if SL.Global.GameMode == "Casual" then
 		SL.Global.ActiveModifiers.TimingWindows = {true,true,true,false,false}
-
-	-- Otherwise, we want all TimingWindows enabled by default.
-	else
- 		SL.Global.ActiveModifiers.TimingWindows = {true,true,true,true,true}
 	end
 
 	--------------------------------------------
@@ -473,9 +469,8 @@ StripSpriteHints = function(filename)
 	return filename:gsub(" %d+x%d+", ""):gsub(" %(doubleres%)", ""):gsub(".png", "")
 end
 
-GetJudgmentGraphics = function(mode)
-	if mode == 'Casual' then mode = 'ITG' end
-	local path = THEME:GetPathG('', '_judgments/' .. mode)
+GetJudgmentGraphics = function()
+	local path = THEME:GetPathG('', '_judgments')
 	local files = FILEMAN:GetDirListing(path .. '/')
 	local judgment_graphics = {}
 
@@ -569,8 +564,13 @@ end
 
 
 -- -----------------------------------------------------------------------
+IsHumanPlayer = function(player)
+	return GAMESTATE:GetPlayerState(player):GetPlayerController() == "PlayerController_Human"
+end
+
+-- -----------------------------------------------------------------------
 IsAutoplay = function(player)
-	return GAMESTATE:GetPlayerState(player):GetPlayerController() ~= "PlayerController_Human"
+	return GAMESTATE:GetPlayerState(player):GetPlayerController() == "PlayerController_Autoplay"
 end
 
 -- -----------------------------------------------------------------------
@@ -756,4 +756,111 @@ CalculateExScore = function(player, ex_counts)
 	end
 
 	return math.max(0, math.floor(total_points/total_possible * 10000) / 100)
+end
+
+-- -----------------------------------------------------------------------
+WriteItlFile = function(dir, data)
+	local path = dir.. "itl2022.itl"
+	local f = RageFileUtil:CreateRageFile()
+	local existing = ""
+	if FILEMAN:DoesFileExist(path) then
+		-- Load the current contents of the file if it exists.
+		if f:Open(path, 1) then
+			existing = f:Read()
+		end
+	end
+
+	-- Append all the scores to the file.
+	if f:Open(path, 2) then
+		f:Write(existing..data)
+	end
+	f:destroy()
+end
+
+-- -----------------------------------------------------------------------
+-- Generates the column mapping in case of any turn mods.
+-- Returns a table containing the column swaps.
+-- Returns nil if we can't compute it
+GetColumnMapping = function(player)
+	local po = GAMESTATE:GetPlayerState(player):GetPlayerOptions('ModsLevel_Preferred')
+
+	local shuffle = po:Shuffle() or po:SoftShuffle() or po:SuperShuffle() 
+	local notes_inserted = (po:Wide() or po:Skippy() or po:Quick() or po:Echo() or
+													po:BMRize() or po:Stomp() or po:Big())
+	local notes_removed = (po:Little()  or po:NoHolds() or po:NoStretch() or
+													po:NoHands() or po:NoJumps() or po:NoFakes() or 
+													po:NoLifts() or po:NoQuads() or po:NoRolls())
+	
+	-- If shuffle is used or notes were inserted/removed, we can't compute it
+	-- return early
+	-- TODO(teejusb): Add support for Backwards()
+	if shuffle or notes_inserted or notes_removed or po:Backwards() then
+		return nil
+	end
+
+	local flip = po:Flip() > 0
+	local invert = po:Invert() > 0
+	local left = po:Left()
+	local right = po:Right()
+	local mirror = po:Mirror()
+
+	-- Combining flip and invert results in unusual spacing so ignore it.
+	if flip and invert then
+		return nil
+	end
+
+	local has_turn = flip or invert or left or right or mirror
+	local style = GAMESTATE:GetCurrentStyle()
+	local num_columns = style:ColumnsPerPlayer()
+
+	-- We only resolve turn mods in 4 and 8 panel.
+	if num_columns ~= 4 and num_columns ~= 8 then
+		if not has_turn then
+			-- Not turn mod used, return 1-to-1 mapping.
+			return range(num_columns)
+		else
+			-- If we are using turn mods in modes without 4 or 8 columns then return
+			-- early since we don't try to resolve them.
+			return nil
+		end
+	end
+
+	local column_mapping = {1, 2, 3, 4}
+
+	if flip then
+		column_mapping = {column_mapping[4], column_mapping[3], column_mapping[2], column_mapping[1]}
+	end
+
+	if invert then
+		column_mapping = {column_mapping[2], column_mapping[1], column_mapping[4], column_mapping[3]}
+	end
+
+	if left then
+		column_mapping = {column_mapping[2], column_mapping[4], column_mapping[1], column_mapping[3]}
+	end
+
+	if right then
+		column_mapping = {column_mapping[3], column_mapping[1], column_mapping[4], column_mapping[2]}
+	end
+
+	if mirror then
+		column_mapping = {column_mapping[4], column_mapping[3], column_mapping[2], column_mapping[1]}
+	end
+
+	if num_columns == 8 then
+		for i=1,4 do
+			column_mapping[4+i] = column_mapping[i] + 4
+		end
+
+		-- We only need to apply the following if exactly one of flip or mirror is active
+		-- since they otherwise cancel each other out
+		if (not flip and mirror) or (flip and not mirror) then
+			for i=1,4 do
+				column_mapping[i] = column_mapping[i] + 4
+				column_mapping[i+4] = column_mapping[i+4] - 4
+			end
+		end
+	end
+
+	return column_mapping
 end

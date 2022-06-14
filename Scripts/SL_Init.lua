@@ -34,13 +34,18 @@ local PlayerDefaults = {
 				MissBecauseHeld = false,
 				NPSGraphAtTop = false,
 				JudgmentTilt = false,
+				ColumnCues = false,
+				DisplayScorebox = true,
+
 				ErrorBar = "None",
 				ErrorBarUp = false,
 				ErrorBarMultiTick = false,
 
 				ShowFaPlusWindow = false,
 				ShowEXScore = false,
+				ShowFaPlusPane = true,
 			}
+			-- TODO(teejusb): Rename "Streams" as the data contains more information than that.
 			self.Streams = {
 				-- Chart identifiers for caching purposes.
 				Filename = "",
@@ -52,6 +57,7 @@ local PlayerDefaults = {
 				NotesPerMeasure = {},
 				PeakNPS = 0,
 				NPSperMeasure = {},
+				columnCues = {},
 				Hash = '',
 
 				Crossovers = 0,
@@ -72,6 +78,7 @@ local PlayerDefaults = {
 				Stats = {}
 			}
 			self.PlayerOptionsString = nil
+			self.ITLData = {}
 
 			-- default panes to intialize ScreenEvaluation to
 			-- when only a single player is joined (single, double)
@@ -122,6 +129,8 @@ local GlobalDefaults = {
 			self.TimeAtSessionStart = nil
 
 			self.GameplayReloadCheck = false
+			-- How long to wait before displaying a "cue"
+			self.ColumnCueMinTime = 1.5
 		end,
 
 		-- These values outside initialize() won't be reset each game cycle,

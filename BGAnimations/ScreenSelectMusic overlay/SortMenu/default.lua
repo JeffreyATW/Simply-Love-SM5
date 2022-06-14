@@ -149,6 +149,24 @@ local SongSearchSettings = {
 	end,
 }
 
+-- General purpose function to redirect input back to the engine.
+-- "self" here should refer to the SortMenu ActorFrame.
+local DirectInputToEngine = function(self)
+	local screen = SCREENMAN:GetTopScreen()
+	local overlay = self:GetParent()
+
+	screen:RemoveInputCallback(sortmenu_input)
+	screen:RemoveInputCallback(testinput_input)
+	screen:RemoveInputCallback(leaderboard_input)
+
+	for player in ivalues(PlayerNumber) do
+		SCREENMAN:set_input_redirected(player, false)
+	end
+	self:playcommand("HideSortMenu")
+	overlay:playcommand("HideTestInput")
+	overlay:playcommand("HideLeaderboard")
+end
+
 ------------------------------------------------------------
 
 local t = Def.ActorFrame {
@@ -213,32 +231,10 @@ local t = Def.ActorFrame {
 	end,
 	-- this returns input back to the engine and its ScreenSelectMusic
 	DirectInputToEngineCommand=function(self)
-		local screen = SCREENMAN:GetTopScreen()
-		local overlay = self:GetParent()
-		screen:RemoveInputCallback(sortmenu_input)
-		screen:RemoveInputCallback(testinput_input)
-		screen:RemoveInputCallback(leaderboard_input)
-		for player in ivalues(PlayerNumber) do
-			SCREENMAN:set_input_redirected(player, false)
-		end
-		self:playcommand("HideSortMenu")
-		overlay:playcommand("HideTestInput")
-		overlay:playcommand("HideLeaderboard")
+		DirectInputToEngine(self)
 	end,
 	DirectInputToEngineForSongSearchCommand=function(self)
-		local screen = SCREENMAN:GetTopScreen()
-		local overlay = self:GetParent()
-
-		screen:RemoveInputCallback(sortmenu_input)
-		screen:RemoveInputCallback(testinput_input)
-		screen:RemoveInputCallback(leaderboard_input)
-
-		for player in ivalues(PlayerNumber) do
-			SCREENMAN:set_input_redirected(player, false)
-		end
-		self:playcommand("HideSortMenu")
-		overlay:playcommand("HideTestInput")
-		overlay:playcommand("HideLeaderboard")
+		DirectInputToEngine(self)
 
 		-- Then add the ScreenTextEntry on top.
 		SCREENMAN:AddNewScreenToTop("ScreenTextEntry")
@@ -308,6 +304,12 @@ local t = Def.ActorFrame {
 		if SL.Global.Stages.PlayedThisGame == 0 then
 			if SL.Global.GameMode ~= "ITG"      then table.insert(wheel_options, {"ChangeMode", "ITG"}) end
 			if SL.Global.GameMode ~= "FA+"      then table.insert(wheel_options, {"ChangeMode", "FA+"}) end
+			-- Casual players often choose the wrong mode and an experienced player in the area may notice this
+			-- and offer to switch them back to casual mode. This allows them to do so again.
+			-- It's technically not possible to reach the sort menu in Casual Mode, but juuust in case let's still
+			-- include the check.
+			if SL.Global.GameMode ~= "Casual"   then table.insert(wheel_options, {"ChangeMode", "Casual"}) end
+
 		end
 		-- allow players to switch to a TestInput overlay if the current game has visual assets to support it
 		-- and if we're in EventMode (public arcades probably don't want random players attempting to diagnose the pads...)

@@ -139,11 +139,14 @@ local Overrides = {
 					kb7 = {
 						"default", "orbital", "retrobar", "retrobar-iidx",
 						"retrobar-o2jam", "retrobar-razor", "retrobar-razor_o2"
+					},
+					techno = {
+						"default"
 					}
 				}
 
-				-- additional SM 5.3 stock note skins
-				if IsSMVersion(5, 3) then
+				-- additional OutFox stock note skins
+				if IsOutFox() then
 					local stockOutfox = {
 						dance = {
 							"defaultsm5", "delta2019", "outfox-itg", "outfox-note",
@@ -202,8 +205,8 @@ local Overrides = {
 	JudgmentGraphic = {
 		LayoutType = "ShowOneInRow",
 		ExportOnChange = true,
-		Choices = function() return map(StripSpriteHints, GetJudgmentGraphics(SL.Global.GameMode)) end,
-		Values = function() return GetJudgmentGraphics(SL.Global.GameMode) end,
+		Choices = function() return map(StripSpriteHints, GetJudgmentGraphics()) end,
+		Values = function() return GetJudgmentGraphics() end,
 		SaveSelections = function(self, list, pn)
 			local mods = SL[ToEnumShortString(pn)].ActiveModifiers
 			for i, val in ipairs(self.Values) do
@@ -388,7 +391,7 @@ local Overrides = {
 			if SL.Global.GameMode == "FA+" then
 				return { "ShowEXScore" }
 			end
-			return { "ShowFaPlusWindow", "ShowEXScore" }
+			return { "ShowFaPlusWindow", "ShowEXScore", "ShowFaPlusPane" }
 		end,
 		LoadSelections = function(self, list, pn)
 			local mods = SL[ToEnumShortString(pn)].ActiveModifiers
@@ -399,6 +402,7 @@ local Overrides = {
 
 			list[1] = mods.ShowFaPlusWindow or false
 			list[2] = mods.ShowEXScore or false
+			list[3] = mods.ShowFaPlusPane or true
 			return list
 		end,
 		SaveSelections = function(self, list, pn)
@@ -407,13 +411,15 @@ local Overrides = {
 			if SL.Global.GameMode == "FA+" then
 				 -- always disable in FA+ mode since it's handled engine side.
 				mods.ShowFaPlusWindow = false
-				mods.ShowEXScore   = list[1]
+				mods.ShowEXScore = list[1]
+				mods.ShowFaPlusPane = list[3]
 				return
 			end
 			mods.ShowFaPlusWindow = list[1]
-			mods.ShowEXScore   = list[2]
+			mods.ShowEXScore = list[2]
+			mods.ShowFaPlusPane = list[3]
 			-- Default to FA+ pane if either options are active.
-			sl_pn.EvalPanePrimary = (list[1] or list[2]) and 2 or 1
+			sl_pn.EvalPanePrimary = ((list[1] or list[2]) and not list[3]) and 2 or 1
 		end
 	},
 	-------------------------------------------------------------------------
@@ -520,12 +526,27 @@ local Overrides = {
 	GameplayExtrasB = {
 		SelectType = "SelectMultiple",
 		Values = function()
+			local vals = {}
 			if IsUsingWideScreen() then
-				return { "JudgmentTilt" }
+				vals = { "JudgmentTilt", "ColumnCues" }
+				if IsServiceAllowed(SL.GrooveStats.GetScores) then
+					vals[#vals+1] = "DisplayScorebox"
+				end
 			else
 				-- Add in the two removed options if not in WideScreen.
-				return { "MissBecauseHeld", "NPSGraphAtTop", "JudgmentTilt" }
+				vals = { "MissBecauseHeld", "NPSGraphAtTop", "JudgmentTilt", "ColumnCues" }
 			end
+			return vals
+		end
+	},
+	GameplayExtrasC = {
+		SelectType = "SelectMultiple",
+		Values = function()
+			local vals = {}
+			if not IsUsingWideScreen() and IsServiceAllowed(SL.GrooveStats.GetScores) then
+				vals = { "DisplayScorebox" }
+			end
+			return vals
 		end
 	},
 	ErrorBar = {
