@@ -10,16 +10,8 @@ local RestartHandler = function(event)
 	if not event then return end
 
 	if event.type == "InputEventType_FirstPress" then
-		if event.DeviceInput.button == "DeviceButton_left ctrl" then
-			holdingCtrl = true
-		elseif event.DeviceInput.button == "DeviceButton_r" then
-			if holdingCtrl then
-				SCREENMAN:GetTopScreen():SetPrevScreenName("ScreenGameplay"):SetNextScreenName("ScreenGameplay"):begin_backing_out()
-			end
-		end
-	elseif event.type == "InputEventType_Release" then
-		if event.DeviceInput.button == "DeviceButton_left ctrl" then
-			holdingCtrl = false
+		if event.DeviceInput.button == "DeviceButton_backspace" then
+			SCREENMAN:GetTopScreen():SetPrevScreenName("ScreenGameplay"):SetNextScreenName("ScreenGameplay"):begin_backing_out()
 		end
 	end
 end
@@ -57,7 +49,7 @@ for player in ivalues(Players) do
 	t[#t+1] = LoadActor("./PerPlayer/ColumnFlashOnMiss.lua", player)
 	t[#t+1] = LoadActor("./PerPlayer/ErrorBar/default.lua", player, layout.ErrorBar)
 	t[#t+1] = LoadActor("./PerPlayer/MeasureCounter.lua", player, layout.MeasureCounter)
-	t[#t+1] = LoadActor("./PerPlayer/TargetScore/default.lua", player)
+	t[#t+1] = LoadActor("./PerPlayer/TargetScore/default.lua", player, layout.SubtractiveScoring)
 	t[#t+1] = LoadActor("./PerPlayer/SubtractiveScoring.lua", player, layout.SubtractiveScoring)
 end
 

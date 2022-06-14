@@ -1,5 +1,6 @@
-local player, pss, isTwoPlayers, graph, target_score = unpack(...)
+local player, pss, isTwoPlayers, graph, target_score, layout = unpack(...)
 local pn = ToEnumShortString(player)
+local mods = SL[pn].ActiveModifiers
 
 local pacemaker = Def.BitmapText{
 	Font="Common Bold",
@@ -46,35 +47,24 @@ local pacemaker = Def.BitmapText{
 --------------------------------------------------------------
 -- if the player wanted the Pacemaker mod
 
-if SL[pn].ActiveModifiers.Pacemaker then
+if mods.Pacemaker then
 
 	pacemaker.InitCommand=function(self)
+		self:zoom(0.35):shadowlength(1):horizalign(center)
 
-		local isCentered = (GetNotefieldX(player) == _screen.cx)
-		local _y = 56
-		local zoomF = 0.4
+		local width = GetNotefieldWidth()
+		local NumColumns = GAMESTATE:GetCurrentStyle():ColumnsPerPlayer()
 
-		local _x = {
-			[PLAYER_1] = GetNotefieldX(PLAYER_1) + 64,
-			[PLAYER_2] = GetNotefieldX(PLAYER_2) - 64
-		}
-
-		if isTwoPlayers and SL[pn].ActiveModifiers.NPSGraphAtTop then
-			_x[PLAYER_1] = GetNotefieldX(PLAYER_1) - 128
-			_x[PLAYER_2] = GetNotefieldX(PLAYER_2) + 128
-			_y = 84
-		end
-
-		self:horizalign(center):zoom(zoomF)
-		self:y(_y)
-		self:x( _x[player] )
-
-		if (not isTwoPlayers) and SL[pn].ActiveModifiers.NPSGraphAtTop then
-			if not isCentered then
-				self:x( _x[OtherPlayer[player]] )
-			else
-				self:x( _x[player] + (82 * (player==PLAYER_1 and 1 or -1)) )
-			end
+		-- mirror image of MeasureCounter.lua
+		self:xy(GetNotefieldX(player) + (width/NumColumns), layout.y)
+	
+		-- Fix overlap issues when MeasureCounter is centered
+		-- since in this case we don't need symmetry.
+		if (mods.MeasureCounterLeft == false) then
+			self:horizalign(left)
+			-- nudge slightly left (15% of the width of the bitmaptext when set to "100.00%")
+			self:settext("100.00%"):addx( -self:GetWidth()*self:GetZoom() * 0.15 )
+			self:settext("")
 		end
 	end
 

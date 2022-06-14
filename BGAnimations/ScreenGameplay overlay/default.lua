@@ -45,4 +45,37 @@ for player in ivalues( GAMESTATE:GetHumanPlayers() ) do
 	af[#af+1] = LoadActor("./PerColumnJudgmentTracking.lua", player)
 end
 
+---------------------------------
+local f = RageFileUtil.CreateRageFile()
+
+if f:Open("Save/Out/SongInfoUpload.txt", 2) then	
+	-- get gamestate objects
+	local song = GAMESTATE:GetCurrentSong()
+	local stepData = GAMESTATE:GetCurrentSteps(0)
+	
+	-- name
+	local name = "Song: "..song:GetTranslitFullTitle().."       "
+	-- artist
+	local artist = "Artist: "..song:GetTranslitArtist().."       "
+	-- pack
+	local pack = "Pack: "..song:GetGroupName().."       "
+	-- diff
+	local diff =  "Difficulty: "..stepData:GetMeter().."       "
+	-- steps
+	local steps = "Steps: "..stepData:GetRadarValues(0):GetValue(5).."       "
+	-- time
+	local time = song:GetStepsSeconds()
+	time = string.format("Duration: %d:%02d", math.floor(time/60), math.floor(time%60))
+
+	-- complete! 
+	f:Write(""..name..artist..pack..diff..steps..time.."       ")
+
+else
+	local fError = f:GetError()
+	Trace( "[FileUtils] Error writing to file: ".. fError )
+	f:ClearError()
+end
+f:destroy()
+---------------------------------
+
 return af

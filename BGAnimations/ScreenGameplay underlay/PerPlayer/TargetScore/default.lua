@@ -12,7 +12,7 @@ if SL.Global.GameMode == "Casual" then return end
 -- ---------------------------------------------------------------
 -- first, the usual suspects
 
-local player = ...
+local player, layout = ...
 local pn = ToEnumShortString(player)
 
 -- ---------------------------------------------------------------
@@ -47,7 +47,7 @@ end
 
 if WantsPacemaker or FailOnMissedTarget or RestartOnMissedTarget then
 	-- Pacemaker logic (needed for ActionOnTargetMissed) and BitmapText (needed for Pacemaker)
-	af[#af+1] = LoadActor("./Pacemaker.lua", {player, pss, isTwoPlayers, pos_data.graph, target_score})
+	af[#af+1] = LoadActor("./Pacemaker.lua", {player, pss, isTwoPlayers, pos_data.graph, target_score, layout})
 
 	-- logic for ActionOnTargetMissed
 	if FailOnMissedTarget or RestartOnMissedTarget then

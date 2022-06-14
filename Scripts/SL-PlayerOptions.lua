@@ -567,13 +567,14 @@ local Overrides = {
 		OneChoiceForAllPlayers = true,
 		LoadSelections = function(self, list, pn)
 			local windows = SL.Global.ActiveModifiers.TimingWindows
-			for i=1,#list do
-				local all_match = true
-				for w,window in ipairs(windows) do
-					if window ~= self.Values[i][w] then all_match = false; break end
-				end
-				if all_match then list[i] = true; break end
-			end
+			-- for i=1,#list do
+			-- 	local all_match = true
+			-- 	for w,window in ipairs(windows) do
+			-- 		if window ~= self.Values[i][w] then all_match = false; break end
+			-- 	end
+			-- 	if all_match then list[i] = true; break end
+			-- 
+			list[2] = true
 			return list
 		end,
 		SaveSelections = function(self, list, pn)

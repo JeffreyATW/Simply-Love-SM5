@@ -51,16 +51,17 @@ end
 
 StepManiaVersionIsSupported = function()
 	-- sanity checks to make sure we're running StepMania
-	if type(ProductFamily) ~= "function" or ProductFamily():lower() ~= "stepmania" then return false end
-	if type(ProductVersion) ~= "function" then return false end
-	if type(ProductVersion()) ~= "string" then return false end
+	-- if type(ProductFamily) ~= "function" or ProductFamily():lower() ~= "stepmania" then return false end
+	-- if type(ProductVersion) ~= "function" then return false end
+	-- if type(ProductVersion()) ~= "string" then return false end
 
 	-- SM5.0.12 is supported (latest stable release)
 	-- SM5.1.x is supported
 	-- SM5.2 is not supported because it saw significant
 	--       backwards-incompatible API changes and is now abandoned
 	-- SM5.3.x is supported (beta status because it's not open source yet)
-	return IsSMVersion(5, 0, 12) or IsSMVersion(5, 1) or IsSMVersion(5, 3)
+	-- return IsSMVersion(5, 0, 12) or IsSMVersion(5, 1) or IsSMVersion(5, 3)
+	return true
 end
 
 -- -----------------------------------------------------------------------
