@@ -240,6 +240,12 @@ local t = Def.ActorFrame {
 		SCREENMAN:AddNewScreenToTop("ScreenTextEntry")
 		SCREENMAN:GetTopScreen():Load(SongSearchSettings)
 	end,
+	DirectInputToEngineForSelectProfileCommand=function(self)
+		DirectInputToEngine(self)
+
+		-- Then add the ScreenSelectProfile on top.
+		SCREENMAN:AddNewScreenToTop("ScreenSelectProfile")
+	end,
 
 	AssessAvailableChoicesCommand=function(self)
 		-- normally I would give variables like these file scope, and not declare
@@ -311,12 +317,25 @@ local t = Def.ActorFrame {
 			if SL.Global.GameMode ~= "Casual"   then table.insert(wheel_options, {"ChangeMode", "Casual"}) end
 
 		end
-		-- allow players to switch to a TestInput overlay if the current game has visual assets to support it
-		-- and if we're in EventMode (public arcades probably don't want random players attempting to diagnose the pads...)
-		local game = GAMESTATE:GetCurrentGame():GetName()
-		if (game=="dance" or game=="pump" or game=="techno") and GAMESTATE:IsEventMode() then
-			table.insert(wheel_options, {"FeelingSalty", "TestInput"})
+
+		-- Add operator functions if in event mode. (Public arcades probably don't want random players
+		-- attempting to diagnose the pads or reload songs ...)
+		if GAMESTATE:IsEventMode() then
+			-- Allow players to switch to a TestInput overlay if the current game has visual assets to support it.
+			local game = GAMESTATE:GetCurrentGame():GetName()
+			if (game=="dance" or game=="pump" or game=="techno") then
+				table.insert(wheel_options, {"FeelingSalty", "TestInput"})
+			end
+
+			table.insert(wheel_options, {"TakeABreather", "LoadNewSongs"})
+
+			-- Only display the View Downloads option if we're connected to
+			-- GrooveStats and Auto-Downloads are enabled.
+			if SL.GrooveStats.IsConnected and ThemePrefs.Get("AutoDownloadUnlocks") then
+				table.insert(wheel_options, {"NeedMoreRam", "ViewDownloads"})
+			end
 		end
+
 		-- The relevant Leaderboard.lua actor is only added if these same conditions are met.
 		if IsServiceAllowed(SL.GrooveStats.Leaderboard) then
 			-- Also only add this if we're actually hovering over a song.
@@ -330,6 +349,10 @@ local t = Def.ActorFrame {
 				-- Only display this option if keyboard features are enabled
 				table.insert(wheel_options, {"WhereforeArtThou", "SongSearch"})
 			end
+		end
+
+		if ThemePrefs.Get("AllowScreenSelectProfile") then
+			table.insert(wheel_options, {"NextPlease", "SwitchProfile"})
 		end
 
 		-- Override sick_wheel's default focus_pos, which is math.floor(num_items / 2)
