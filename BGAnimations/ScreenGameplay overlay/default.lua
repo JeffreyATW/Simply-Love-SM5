@@ -78,4 +78,38 @@ end
 f:destroy()
 ---------------------------------
 
+
+---------------------------------
+local f = RageFileUtil.CreateRageFile()
+
+if f:Open("Save/Out/SongInfoUploadMultiline.txt", 2) then	
+	-- get gamestate objects
+	local song = GAMESTATE:GetCurrentSong()
+	local stepData = GAMESTATE:GetCurrentSteps(0)
+	
+	-- name
+	local name = "Song: "..song:GetTranslitFullTitle().."\n"
+	-- artist
+	local artist = "Artist: "..song:GetTranslitArtist().."\n"
+	-- pack
+	local pack = "Pack: "..song:GetGroupName().."\n"
+	-- diff
+	local diff =  "Difficulty: "..stepData:GetMeter().."\n"
+	-- steps
+	local steps = "Steps: "..stepData:GetRadarValues(0):GetValue(5).."\n"
+	-- time
+	local time = song:GetStepsSeconds()
+	time = string.format("Duration: %d:%02d", math.floor(time/60), math.floor(time%60))
+
+	-- complete! 
+	f:Write(""..name..artist..pack..diff..steps..time.."")
+
+else
+	local fError = f:GetError()
+	Trace( "[FileUtils] Error writing to file: ".. fError )
+	f:ClearError()
+end
+f:destroy()
+---------------------------------
+
 return af
