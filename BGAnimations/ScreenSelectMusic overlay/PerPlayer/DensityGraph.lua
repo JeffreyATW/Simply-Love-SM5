@@ -37,6 +37,16 @@ local af = Def.ActorFrame{
 			self:queuecommand("Redraw")
 		end
 	end,
+	CodeMessageCommand=function(self, params)
+		-- Toggle between the density graph and the pattern info
+		if params.Name == "TogglePatternInfo" and params.PlayerNumber == player then
+			-- Only need to toggle in versus since in single player modes, both
+			-- panes are already displayed.
+			if GAMESTATE:GetNumSidesJoined() == 2 then
+				self:queuecommand("TogglePatternInfo")
+			end
+		end
+	end,
 }
 
 -- Background quad for the density graph
@@ -95,6 +105,9 @@ af2[#af2+1] = NPS_Histogram(player, width, height)..{
 	end,
 	RedrawCommand=function(self)
 		self:visible(true)
+	end,
+	TogglePatternInfoCommand=function(self)
+		self:visible(not self:GetVisible())
 	end
 }
 -- Don't let the density graph parse the chart.
@@ -112,9 +125,8 @@ af2[#af2+1] = LoadFont("Common Normal")..{
 		else
 			self:addx(-136):addy(-41)
 		end
-
-		-- We want black text in Rainbow mode, white otherwise.
-		self:diffuse(ThemePrefs.Get("RainbowMode") and {0, 0, 0, 1} or {1, 1, 1, 1})
+		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
+		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
 	end,
 	HideCommand=function(self)
 		self:settext("Peak NPS: ")
@@ -126,6 +138,9 @@ af2[#af2+1] = LoadFont("Common Normal")..{
 			self:visible(true)
 		end
 	end,
+	TogglePatternInfoCommand=function(self)
+		self:visible(not self:GetVisible())
+	end
 }
 
 -- Breakdown
@@ -141,7 +156,9 @@ af2[#af2+1] = Def.ActorFrame{
 	RedrawCommand=function(self)
 		self:visible(true)
 	end,
-
+	TogglePatternInfoCommand=function(self)
+		self:visible(not self:GetVisible())
+	end,
 	Def.Quad{
 		InitCommand=function(self)
 			local bgHeight = 17
@@ -153,7 +170,6 @@ af2[#af2+1] = Def.ActorFrame{
 		Text="",
 		Name="BreakdownText",
 		InitCommand=function(self)
-			local textHeight = 17
 			local textZoom = 0.8
 			self:maxwidth(width/textZoom):zoom(textZoom)
 		end,
@@ -175,20 +191,33 @@ af2[#af2+1] = Def.ActorFrame{
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
 	InitCommand=function(self)
-		if player == PLAYER_1 then
-			self:addy(64 + 24)
+		if GAMESTATE:GetNumSidesJoined() == 2 then
+			self:y(0)
 		else
-			self:addy(-64 - 24)
+			self:y(88 * (player == PLAYER_1 and 1 or -1))
 		end
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
+		if GAMESTATE:GetNumSidesJoined() == 2 then
+			self:y(0)
+		else
+			self:y(88 * (player == PLAYER_1 and 1 or -1))
+		end
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
+		if GAMESTATE:GetNumSidesJoined() == 2 then
+			self:y(0)
+		else
+			self:y(88 * (player == PLAYER_1 and 1 or -1))
+		end
 	end,
-
+	TogglePatternInfoCommand=function(self)
+		self:visible(not self:GetVisible())
+	end,
+	
 	-- Background for the additional chart info.
 	-- Only shown in 1 Player mode
 	Def.Quad{
@@ -221,7 +250,7 @@ for i, row in ipairs(layout) do
 				if col == "Total Stream" then
 					self:maxwidth(100)
 				end
-				self:xy(-width/2 + 40, -height/2 + 10)
+				self:xy(-width/2 + 40, -height/2 + 13)
 				self:addx((j-1)*colSpacing)
 				self:addy((i-1)*rowSpacing)
 			end,
@@ -254,7 +283,7 @@ for i, row in ipairs(layout) do
 				local textHeight = 17
 				local textZoom = 0.8
 				self:maxwidth(width/textZoom):zoom(textZoom):horizalign(left)
-				self:xy(-width/2 + 50, -height/2 + 10)
+				self:xy(-width/2 + 50, -height/2 + 13)
 				self:addx((j-1)*colSpacing)
 				self:addy((i-1)*rowSpacing)
 			end,

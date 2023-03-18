@@ -15,16 +15,16 @@ local af = Def.ActorFrame{
 
 	PlayerProfileSetMessageCommand=function(self, params)
 		if not PROFILEMAN:IsPersistentProfile(params.Player) then
-			GAMESTATE:ResetPlayerOptions(params.Player)
-			SL[ToEnumShortString(params.Player)]:initialize()
+			LoadGuest(params.Player)
 		end
+		ApplyMods(params.Player)
 	end,
 
 	PlayerJoinedMessageCommand=function(self, params)
 		if not PROFILEMAN:IsPersistentProfile(params.Player) then
-			GAMESTATE:ResetPlayerOptions(params.Player)
-			SL[ToEnumShortString(params.Player)]:initialize()
+			LoadGuest(params.Player)
 		end
+		ApplyMods(params.Player)
 	end,
 
 	-- ---------------------------------------------------
@@ -52,10 +52,10 @@ local af = Def.ActorFrame{
 	-- The grid for the difficulty picker (normal) or CourseContentsList (CourseMode)
 	LoadActor("./StepsDisplayList/default.lua"),
 
-	-- Banner Art
-	LoadActor("./Banner.lua"),
 	-- Song's Musical Artist, BPM, Duration
 	LoadActor("./SongDescription/SongDescription.lua"),
+	-- Banner Art
+	LoadActor("./Banner.lua"),
 
 	-- ---------------------------------------------------
 	-- finally, load the overlay used for sorting the MusicWheel (and more), hidden by default
