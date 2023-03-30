@@ -1,3 +1,18 @@
+GrooveStatsURL = function()
+	-- For test GrooveStats responses, create a file called GrooveStats_UAT.txt
+	-- in your theme's Other directory. To toggle between live and UAT, delete/rename this file.
+	-- Requires gsapi-mock and adding 127.0.0.1 to HttpAllowHosts in Preferences.ini
+	local url_prefix
+	local dir = THEME:GetCurrentThemeDirectory() .. "Other/"
+	local uat = dir .. "GrooveStats_UAT.txt"
+	if not FILEMAN:DoesFileExist(uat) then 
+		url_prefix = "https://api.groovestats.com/" 
+	else
+		url_prefix = "http://127.0.0.1:5000/"
+	end
+	return url_prefix
+end
+
 -- -----------------------------------------------------------------------
 -- Returns an actor that can write a request, wait for its response, and then
 -- perform some action. This actor will only wait for one response at a time.
@@ -41,7 +56,7 @@
 -- args: any, arguments that will be made accesible to the callback function. This
 --       can of any type as long as the callback knows what to do with it.
 RequestResponseActor = function(x, y)
-	local url_prefix = "https://api.groovestats.com/"
+	local url_prefix = GrooveStatsURL()
 
 	return Def.ActorFrame{
 		InitCommand=function(self)
@@ -243,15 +258,16 @@ end
 --  - We must be in the "dance" game mode (not "pump", etc)
 --  - We must be in either ITG or FA+ mode.
 --  - At least one Api Key must be available (this condition may be relaxed in the future)
---  - We must not be in course mode.
+--  - We must not be in course mode (ZANKOKU: moving this specific check to autosubmitscore instead, since otherwise it blocks scorebox when playing course mode).
 IsServiceAllowed = function(condition)
 	return (condition and
 		ThemePrefs.Get("EnableGrooveStats") and
 		SL.GrooveStats.IsConnected and
 		GAMESTATE:GetCurrentGame():GetName()=="dance" and
 		(SL.Global.GameMode == "ITG" or SL.Global.GameMode == "FA+") and
-		(SL.P1.ApiKey ~= "" or SL.P2.ApiKey ~= "") and
-		not GAMESTATE:IsCourseMode())
+		(SL.P1.ApiKey ~= "" or SL.P2.ApiKey ~= "") -- and
+		-- not GAMESTATE:IsCourseMode())
+		)
 end
 
 -- -----------------------------------------------------------------------

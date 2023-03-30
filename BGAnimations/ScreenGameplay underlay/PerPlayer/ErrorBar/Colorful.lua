@@ -11,18 +11,15 @@ local tickWidth = 2
 local tickDuration = 0.5
 local numTicks = mods.ErrorBarMultiTick and 10 or 1
 local currentTick = 1
-local judgmentToTrim = {
-    TapNoteScore_W3 = mods.ErrorBarTrim and SL.Global.GameMode == "ITG",
-    TapNoteScore_W4 = mods.ErrorBarTrim,
-    TapNoteScore_W5 = mods.ErrorBarTrim
-}
 
 local enabledTimingWindows = {}
-for i = 1, NumJudgmentsAvailable() do
+
+-- Find out maximum timing window for error bar
+local maxError = mods.ErrorBarCap < NumJudgmentsAvailable() and mods.ErrorBarCap or NumJudgmentsAvailable()
+
+for i = 1, maxError do
     if mods.TimingWindows[i] then
-        if not judgmentToTrim["TapNoteScore_W" .. tostring(i)] then
-            enabledTimingWindows[#enabledTimingWindows + 1] = i
-        end
+        enabledTimingWindows[#enabledTimingWindows+1] = i
     end
 end
 
@@ -41,7 +38,6 @@ local af = Def.ActorFrame{
     JudgmentMessageCommand = function(self, params)
         if params.Player ~= player then return end
         if params.HoldNoteScore then return end
-        if judgmentToTrim[params.TapNoteScore] then return end
 
         local score = ToEnumShortString(params.TapNoteScore)
         if score == "W1" or score == "W2" or score == "W3" or score == "W4" or score == "W5" then
@@ -54,15 +50,22 @@ local af = Def.ActorFrame{
             bar:finishtweening()
             bar:zoom(1)
 
+            local xpos = params.TapNoteOffset * wscale
+            if tonumber(score:sub(-1)) > maxError then
+                xpos = maxTimingOffset * wscale * (params.TapNoteOffset < 0 and -1 or 1)
+            end
+
             if numTicks > 1 then
                 tick:diffusealpha(1)
-                    :x(params.TapNoteOffset * wscale)
+                    :x(xpos)
                     :sleep(0.03):linear(tickDuration - 0.03)
                     :diffusealpha(0)
+                
             else
                 tick:diffusealpha(1)
-                    :x(params.TapNoteOffset * wscale)
+                    :x(xpos)
                     :sleep(tickDuration):diffusealpha(0)
+
             end
 
             bar:sleep(tickDuration)
@@ -96,7 +99,7 @@ for i = 1, #enabledTimingWindows do
     
     if mods.ShowFaPlusWindow and wi == 1 then
         -- Split the Fantastic window
-        windows.timing[#windows.timing + 1] = GetTimingWindow(1, "FA+")
+        windows.timing[#windows.timing + 1] = GetTimingWindow(1, "FA+", mods.SmallerWhite)
         windows.color[#windows.color + 1] = SL.JudgmentColors["FA+"][1]
 
         windows.timing[#windows.timing + 1] = GetTimingWindow(2, "FA+")

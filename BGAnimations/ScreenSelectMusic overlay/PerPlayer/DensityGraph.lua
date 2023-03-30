@@ -2,6 +2,7 @@
 -- Disable the functionality.
 if GAMESTATE:IsCourseMode() then return end
 
+
 local player = ...
 local pn = ToEnumShortString(player)
 
@@ -9,10 +10,18 @@ local pn = ToEnumShortString(player)
 local height = 64
 local width = IsUsingWideScreen() and 286 or 276
 
+local marquee_index
+local text_table = {}
+
 local af = Def.ActorFrame{
 	InitCommand=function(self)
 		self:visible( GAMESTATE:IsHumanPlayer(player) )
-		self:xy(_screen.cx-182, _screen.cy+23)
+		self:x(_screen.cx-182)
+		if #GAMESTATE:GetHumanPlayers() == 1 then 
+			self:y(_screen.cy+62)
+		else
+			self:y(_screen.cy+23)
+		end
 
 		if player == PLAYER_2 then
 			self:addy(height+24)
@@ -23,11 +32,34 @@ local af = Def.ActorFrame{
 		end
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
+		self:x(_screen.cx-182)
+		if #GAMESTATE:GetHumanPlayers() == 1 then 
+			self:y(_screen.cy+62)
+
+		else
+			self:y(_screen.cy+23)
+		end
+		if player == PLAYER_2 then
+			self:addy(height+24)
+		end
+
+		if IsUsingWideScreen() then
+			self:addx(-5)
+		end
 		if params.Player == player then
 			self:visible(true)
 		end
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
+		self:x(_screen.cx-182)
+		self:y(_screen.cy+62)
+		if player == PLAYER_2 then
+			self:addy(height+24)
+		end
+
+		if IsUsingWideScreen() then
+			self:addx(-5)
+		end
 		if params.Player == player then
 			self:visible(false)
 		end
@@ -55,6 +87,9 @@ af[#af+1] = Def.Quad{
 		self:diffuse(color("#1e282f")):zoomto(width, height)
 		if ThemePrefs.Get("RainbowMode") then
 			self:diffusealpha(0.9)
+		end
+		if ThemePrefs.Get("VisualStyle") == "Technique" then
+			self:diffusealpha(0.5)
 		end
 	end
 }
@@ -117,26 +152,77 @@ af2[#af2]["CurrentSteps"..pn.."ChangedMessageCommand"] = nil
 -- The Peak NPS text
 af2[#af2+1] = LoadFont("Common Normal")..{
 	Name="NPS",
-	Text="Peak NPS: ",
+	Text="",
 	InitCommand=function(self)
-		self:horizalign(left):zoom(0.8)
-		if player == PLAYER_1 then
-			self:addx(60):addy(-41)
+		self:zoom(0.8)
+		if #GAMESTATE:GetHumanPlayers() == 1 then 
+			self:settext("Peak NPS: \nPeak eBPM: ")
+			self:horizalign(left)
+			self:y(-50)
+			if player == PLAYER_1 then
+				self:x(60)
+			else					
+				self:x(-136)
+			end
 		else
-			self:addx(-136):addy(-41)
+			self:horizalign("right")
+			self:y(-40)
+			if player == PLAYER_1 then 
+				self:x(140)
+			else
+				self:x(-55)
+			end
+			self:settext("Peak NPS: ")		
 		end
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
 	end,
 	HideCommand=function(self)
-		self:settext("Peak NPS: ")
+		if #GAMESTATE:GetHumanPlayers() == 1 then 
+			self:settext("Peak NPS: \nPeak eBPM: ")
+		else
+			self:settext("Peak NPS: ")
+		end
 		self:visible(false)
 	end,
 	RedrawCommand=function(self)
 		if SL[pn].Streams.PeakNPS ~= 0 then
-			self:settext(("Peak NPS: %.1f"):format(SL[pn].Streams.PeakNPS * SL.Global.ActiveModifiers.MusicRate))
+			local nps = SL[pn].Streams.PeakNPS * SL.Global.ActiveModifiers.MusicRate
+			if #GAMESTATE:GetHumanPlayers() == 1 then 
+				self:horizalign("left")
+				self:y(-50)
+				if player == PLAYER_1 then
+					self:x(60)
+				else					
+					self:x(-136)
+				end
+				self:settext(("Peak NPS: %.1f\nPeak eBPM: %.0f"):format(nps,nps*15))
+			else
+				self:horizalign("right")
+				self:y(-40)
+				if player == PLAYER_1 then 
+					self:x(140)
+				else
+					self:x(-55)
+				end
+				marquee_index = 0
+				text_table = {}
+				table.insert(text_table,("Peak NPS: %.1f"):format(nps))
+				table.insert(text_table,("Peak eBPM: %.1f"):format(nps*15))
+				self:finishtweening():playcommand("Marquee",{text_table=text_table})
+			end
 			self:visible(true)
 		end
+	end,
+	MarqueeCommand=function(self)
+		marquee_index = (marquee_index % #text_table) + 1
+		if #GAMESTATE:GetHumanPlayers() > 1 then 
+			self:settext(text_table[marquee_index])
+			self:sleep(2):queuecommand("Marquee")
+		end
+	end,
+	OffCommand=function(self)
+		self:stoptweening()
 	end,
 	TogglePatternInfoCommand=function(self)
 		self:visible(not self:GetVisible())
@@ -170,6 +256,7 @@ af2[#af2+1] = Def.ActorFrame{
 		Text="",
 		Name="BreakdownText",
 		InitCommand=function(self)
+			local textHeight = 17
 			local textZoom = 0.8
 			self:maxwidth(width/textZoom):zoom(textZoom)
 		end,
@@ -178,12 +265,28 @@ af2[#af2+1] = Def.ActorFrame{
 		end,
 		RedrawCommand=function(self)
 			local textZoom = 0.8
+			breakdown_table = {}
+			marquee_index = 0
 			self:settext(GenerateBreakdownText(pn, 0))
+			breakdown_table[1] = GenerateBreakdownText(pn, 0)
 			local minimization_level = 1
-			while self:GetWidth() > (width/textZoom) and minimization_level < 4 do
+			while self:GetWidth() > (width/textZoom*(1+minimization_level*0.1)) and minimization_level < 4 do
+				if self:GetWidth() < (width/textZoom*(1.7)) then
+					breakdown_table[2] = GenerateBreakdownText(pn, minimization_level-1)
+				end
 				self:settext(GenerateBreakdownText(pn, minimization_level))
+				breakdown_table[1] = GenerateBreakdownText(pn, minimization_level)
 				minimization_level = minimization_level + 1
 			end
+			self:finishtweening():playcommand("Marquee",{breakdown_table=breakdown_table})
+		end,
+		MarqueeCommand=function(self)
+			marquee_index = (marquee_index % #breakdown_table) + 1
+			self:settext(breakdown_table[marquee_index])
+			self:sleep(5):queuecommand("Marquee")
+		end,
+		OffCommand=function(self)
+			self:stoptweening()
 		end,
 	}
 }
@@ -194,7 +297,11 @@ af2[#af2+1] = Def.ActorFrame{
 		if GAMESTATE:GetNumSidesJoined() == 2 then
 			self:y(0)
 		else
-			self:y(88 * (player == PLAYER_1 and 1 or -1))
+			if player == PLAYER_1 then
+				self:y(38 + 24)
+			else
+				self:y(-38 - 80)
+			end
 		end
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 	end,
@@ -203,15 +310,19 @@ af2[#af2+1] = Def.ActorFrame{
 		if GAMESTATE:GetNumSidesJoined() == 2 then
 			self:y(0)
 		else
-			self:y(88 * (player == PLAYER_1 and 1 or -1))
+			if player == PLAYER_1 then
+				self:y(38 + 24)
+			else
+				self:y(-38 - 80)
+			end
 		end
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
-		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(0)
+		if player == PLAYER_1 then
+			self:y(38 + 24)
 		else
-			self:y(88 * (player == PLAYER_1 and 1 or -1))
+			self:y(-38 - 80)
 		end
 	end,
 	TogglePatternInfoCommand=function(self)
@@ -222,7 +333,10 @@ af2[#af2+1] = Def.ActorFrame{
 	-- Only shown in 1 Player mode
 	Def.Quad{
 		InitCommand=function(self)
-			self:diffuse(color("#1e282f")):zoomto(width, height)
+			self:addy(-4):diffuse(color("#1e282f")):zoomto(width, height-10)
+			if ThemePrefs.Get("VisualStyle") == "Technique" then
+				self:diffusealpha(0.5)
+			end
 		end,
 	}
 }
@@ -236,7 +350,7 @@ local layout = {
 }
 
 local colSpacing = 150
-local rowSpacing = 20
+local rowSpacing = 17
 
 for i, row in ipairs(layout) do
 	for j, col in pairs(row) do
@@ -245,12 +359,12 @@ for i, row in ipairs(layout) do
 			Name=col .. "Value",
 			InitCommand=function(self)
 				local textHeight = 17
-				local textZoom = 0.8
+				local textZoom = 0.7
 				self:zoom(textZoom):horizalign(right)
 				if col == "Total Stream" then
 					self:maxwidth(100)
 				end
-				self:xy(-width/2 + 40, -height/2 + 13)
+				self:xy(-width/2 + 40, -height/2 + 10)
 				self:addx((j-1)*colSpacing)
 				self:addy((i-1)*rowSpacing)
 			end,
@@ -270,7 +384,7 @@ for i, row in ipairs(layout) do
 					if streamMeasures == 0 then
 						self:settext("None (0.0%)")
 					else
-						self:settext(string.format("%d/%d (%0.1f%%)", streamMeasures, totalMeasures, streamMeasures/totalMeasures*100))
+						self:settext(string.format("%d/%d (%0.2f%%)", streamMeasures, totalMeasures, streamMeasures/totalMeasures*100))
 					end
 				end
 			end
@@ -283,7 +397,7 @@ for i, row in ipairs(layout) do
 				local textHeight = 17
 				local textZoom = 0.8
 				self:maxwidth(width/textZoom):zoom(textZoom):horizalign(left)
-				self:xy(-width/2 + 50, -height/2 + 13)
+				self:xy(-width/2 + 50, -height/2 + 10)
 				self:addx((j-1)*colSpacing)
 				self:addy((i-1)*rowSpacing)
 			end,

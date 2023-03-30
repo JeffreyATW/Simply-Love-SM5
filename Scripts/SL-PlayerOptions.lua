@@ -248,7 +248,13 @@ local Overrides = {
 	},
 	-------------------------------------------------------------------------
 	BackgroundFilter = {
-		Values = { 'Off','Dark','Darker','Darkest' },
+		Choices = function()
+			local first = 0
+			local last = 100
+			local step = 1
+			
+			return range(first,last,step)
+		end
 	},
 	-------------------------------------------------------------------------
 	Mini = {
@@ -392,18 +398,20 @@ local Overrides = {
 			if SL.Global.GameMode == "FA+" then
 				return { "ShowEXScore" }
 			end
-			return { "ShowFaPlusWindow", "ShowEXScore", "ShowFaPlusPane" }
+			return { "ShowFaPlusWindow", "ShowEXScore", "ShowFaPlusPane", "SmallerWhite" }
 		end,
 		LoadSelections = function(self, list, pn)
 			local mods = SL[ToEnumShortString(pn)].ActiveModifiers
 			if SL.Global.GameMode == "FA+" then
 				list[1] = mods.ShowEXScore or false
+				list[4] = false
 				return list
 			end
 
 			list[1] = mods.ShowFaPlusWindow or false
 			list[2] = mods.ShowEXScore or false
-			list[3] = mods.ShowFaPlusPane or true
+			list[3] = mods.ShowFaPlusPane or false
+			list[4] = mods.SmallerWhite or false
 			return list
 		end,
 		SaveSelections = function(self, list, pn)
@@ -412,13 +420,15 @@ local Overrides = {
 			if SL.Global.GameMode == "FA+" then
 				 -- always disable in FA+ mode since it's handled engine side.
 				mods.ShowFaPlusWindow = false
-				mods.ShowEXScore = list[2]
-				mods.ShowFaPlusPane = list[3]
+				mods.ShowEXScore = list[1]
+				-- mods.ShowFaPlusPane = list[3]
+				mods.SmallerWhite = false
 				return
 			end
 			mods.ShowFaPlusWindow = list[1]
 			mods.ShowEXScore = list[2]
 			mods.ShowFaPlusPane = list[3]
+			mods.SmallerWhite = list[4]
 			-- Default to FA+ pane if either options are active.
 			sl_pn.EvalPanePrimary = ((list[1] or list[2]) and list[3]) and 2 or 1
 		end
@@ -482,6 +492,31 @@ local Overrides = {
 		end,
 	},
 	-------------------------------------------------------------------------
+	StepStatsInfo = {
+		SelectType = "SelectMultiple",
+		Values = function()
+			values = { "PackBanner", "StepInfo" }
+			if IsServiceAllowed(SL.GrooveStats.GetScores) then
+				table.insert(values, "DisplayScorebox")
+			end
+			return values
+		end,
+	},
+	-------------------------------------------------------------------------
+	StepStatsExtra = {
+		Choices = function()
+			local choices = { "None", "ErrorStats" }
+			local GIFdir = THEME:GetCurrentThemeDirectory() .. "BGAnimations/ScreenGameplay underlay/PerPlayer/StepStatistics/GIFs/"
+			local GIFs = findFiles(GIFdir, "lua")
+			for i=1, #GIFs do
+				GIFname = cleanGSub(cleanGSub(GIFs[i], "/" .. GIFdir, ""), ".lua", "")
+				table.insert(choices, GIFname)
+			end
+			
+			return choices
+		end,
+	},
+	-------------------------------------------------------------------------
 	TargetScore = {
 		Values = function()
 			local t = {}
@@ -509,11 +544,19 @@ local Overrides = {
 		Values = { "Nothing", "Fail", "Restart" },
 	},
 	-------------------------------------------------------------------------
+	MiniIndicator = {
+		Values = { "None", "SubtractiveScoring", "PredictiveScoring", "PaceScoring", "RivalScoring", "Pacemaker", "StreamProg" },
+	},
+	-------------------------------------------------------------------------
+	MiniIndicatorColor = {
+		Values = { "Default", "Red", "Blue", "Yellow", "Green", "Magenta", "White" },
+	},
+	-------------------------------------------------------------------------
 	GameplayExtras = {
 		SelectType = "SelectMultiple",
 		Values = function()
 			-- GameplayExtras will be presented as a single OptionRow when WideScreen
-			local vals = { "ColumnFlashOnMiss", "SubtractiveScoring", "Pacemaker", "MissBecauseHeld", "NPSGraphAtTop" }
+			local vals = { "ColumnFlashOnMiss", "Pacemaker", "MissBecauseHeld", "TrackEarlyJudgments", "NPSGraphAtTop" }
 
 			-- if not WideScreen (traditional DDR cabinets running at 640x480)
 			-- remove the last two choices to be appended an additional OptionRow (GameplayExtrasB below).
@@ -529,10 +572,7 @@ local Overrides = {
 		Values = function()
 			local vals = {}
 			if IsUsingWideScreen() then
-				vals = { "JudgmentTilt", "ColumnCues" }
-				if IsServiceAllowed(SL.GrooveStats.GetScores) then
-					vals[#vals+1] = "DisplayScorebox"
-				end
+				vals = { "JudgmentTilt", "ColumnCues", "ColumnCountdown", "ShowHeldMiss" }
 			else
 				-- Add in the two removed options if not in WideScreen.
 				vals = { "MissBecauseHeld", "NPSGraphAtTop", "JudgmentTilt", "ColumnCues" }
@@ -544,28 +584,79 @@ local Overrides = {
 		SelectType = "SelectMultiple",
 		Values = function()
 			local vals = {}
-			if not IsUsingWideScreen() and IsServiceAllowed(SL.GrooveStats.GetScores) then
-				vals = { "DisplayScorebox" }
+			if not IsUsingWideScreen() then
+				vals = { "ColumnCountdown", "ShowHeldMiss" }
 			end
 			return vals
 		end
 	},
 	ErrorBar = {
-		Values = { "None", "Colorful", "Monochrome", "Text" },
+		Values = { "None", "Colorful", "Monochrome", "Text", "Gauge" },
 	},
 	-------------------------------------------------------------------------
 	ErrorBarOptions = {
 		SelectType = "SelectMultiple",
-		Values = { "ErrorBarUp", "ErrorBarMultiTick", "ErrorBarTrim" },
+		Values = { "ErrorBarUp", "ErrorBarMultiTick" },
+	},
+	-------------------------------------------------------------------------
+	ErrorBarCap = {
+		Values = { 5, 1, 2, 3 },
+		Choices = function()
+			local tns = "TapNoteScore" .. (SL.Global.GameMode=="ITG" and "" or SL.Global.GameMode)
+			local t = {THEME:GetString("SLPlayerOptions","None")}
+			-- assume pluralization via terminal s
+			t[2] = THEME:GetString(tns,"W1")
+			t[3] = THEME:GetString(tns,"W2")
+			t[4] = THEME:GetString(tns,"W3")
+			return t
+		end,
+	},
+	-------------------------------------------------------------------------
+	RainbowComboOptions = {
+		Values = { "RainbowNever", "RainbowAlways", "Rainbow100", "Rainbow500", "Rainbow1000" },
+	},
+	-------------------------------------------------------------------------
+	FunOptions = {
+		SelectType = "SelectMultiple",
+		Values = { "Waterfall", "FadeFantastic", "NoBar" },
 	},
 	-------------------------------------------------------------------------
 	MeasureCounter = {
 		Values = { "None", "8th", "12th", "16th", "24th", "32nd" },
 	},
 	-------------------------------------------------------------------------
+	MeasureCounterLookahead = {
+		Values = { 0, 1, 2, 3, 4 },
+	},
+	-------------------------------------------------------------------------
 	MeasureCounterOptions = {
 		SelectType = "SelectMultiple",
-		Values = { "MeasureCounterLeft", "MeasureCounterUp", "HideLookahead" },
+		Values = { "MeasureCounterLeft", "MeasureCounterUp", "MeasureCounterVert", "BrokenRun", "RunTimer"},
+	},
+	-------------------------------------------------------------------------
+	LifeBarOptions = {
+		SelectType = "SelectMultiple",
+		Values = { "RainbowMax", "ResponsiveColors", "ShowLifePercent"},
+	},
+	-------------------------------------------------------------------------
+	NotefieldShift = {
+		Choices = function()
+			local first = -100
+			local last = 100
+			local step = 1
+			return range(first, last, step)
+		end,
+		ExportOnChange = true,
+		LayoutType = "ShowOneInRow",
+		SaveSelections = function(self, list, pn)
+			local mods, playeroptions = GetModsAndPlayerOptions(pn)
+
+			for i=1,#self.Choices do
+				if list[i] then
+					mods.NotefieldShift = self.Choices[i]
+				end
+			end
+		end
 	},
 	-------------------------------------------------------------------------
 	VisualDelay = {
@@ -602,9 +693,14 @@ local Overrides = {
 			local tns = "TapNoteScore" .. (SL.Global.GameMode=="ITG" and "" or SL.Global.GameMode)
 			local t = {THEME:GetString("SLPlayerOptions","None")}
 			-- assume pluralization via terminal s
-			t[2] = THEME:GetString(tns,"W5").."s"
-			t[3] = THEME:GetString(tns,"W4").."s + "..t[2]
-			t[4] = THEME:GetString(tns,"W1").."s + "..THEME:GetString(tns,"W2").."s"
+			local idx = 2
+			t[idx] = THEME:GetString(tns,"W5").."s"
+			idx = idx + 1
+			if SL.Global.GameMode=="ITG" then
+				t[idx] = THEME:GetString(tns,"W4").."s + "..t[idx-1]
+				idx = idx + 1
+			end
+			t[idx] = THEME:GetString(tns,"W1").."s + "..THEME:GetString(tns,"W2").."s"
 			return t
 		end,
 		LoadSelections = function(self, list, pn)
@@ -662,9 +758,27 @@ local Overrides = {
 		Values = { "Standard", "Surround", "Vertical" },
 	},
 	-------------------------------------------------------------------------
+	JudgmentFlash = {
+		SelectType = "SelectMultiple",
+		Values = { "FlashMiss", "FlashWayOff", "FlashDecent", "FlashGreat", "FlashExcellent", "FlashFantastic" }
+	},
+	-------------------------------------------------------------------------
+	BeatBars = {
+		Choices = { "None", "Measures", "Beats" },
+	},
+	-------------------------------------------------------------------------
+	TiltMultiplier = {
+		Choices = { 0.25, 0.5, 1, 1.5, 2, 2.5, 3 },
+	},
+	-------------------------------------------------------------------------
+	Experimental = {
+		SelectType = "SelectMultiple",
+		Choices = { "FAPlusGradual", "JudgmentBack" },
+	},
+	-------------------------------------------------------------------------
 	ScreenAfterPlayerOptions = {
 		Values = function()
-			local choices = { "Gameplay", "Select Music", "Options2", "Options3"  }
+			local choices = { "Gameplay", "Select Music", "Options2", "Options3", "Options4"  }
 			if SL.Global.MenuTimer.ScreenSelectMusic < 1 then table.remove(choices, 2) end
 			return choices
 		end,
@@ -676,16 +790,18 @@ local Overrides = {
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions = SelectMusicOrCourse() end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions2" end
 				if list[4] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions3" end
+				if list[5] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions4" end
 			else
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions2" end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions3" end
+				if list[4] then SL.Global.ScreenAfter.PlayerOptions = "ScreenPlayerOptions4" end
 			end
 		end
 	},
 	-------------------------------------------------------------------------
 	ScreenAfterPlayerOptions2 = {
 		Values = function()
-			local choices = { "Gameplay", "Select Music", "Options1", "Options3"  }
+			local choices = { "Gameplay", "Select Music", "Options1", "Options3", "Options4"  }
 			if SL.Global.MenuTimer.ScreenSelectMusic < 1 then table.remove(choices, 2) end
 			return choices
 		end,
@@ -697,9 +813,11 @@ local Overrides = {
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions2 = SelectMusicOrCourse() end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions" end
 				if list[4] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions3" end
+				if list[5] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions4" end
 			else
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions" end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions3" end
+				if list[4] then SL.Global.ScreenAfter.PlayerOptions2 = "ScreenPlayerOptions4" end
 			end
 		end
 	},
@@ -707,7 +825,7 @@ local Overrides = {
 	-- this is so dumb; I need to find time to completely rewrite ScreenPlayerOptions :(
 	ScreenAfterPlayerOptions3 = {
 		Values = function()
-			local choices = { "Gameplay", "Select Music", "Options1", "Options2"  }
+			local choices = { "Gameplay", "Select Music", "Options1", "Options2", "Options4"  }
 			if SL.Global.MenuTimer.ScreenSelectMusic < 1 then table.remove(choices, 2) end
 			return choices
 		end,
@@ -719,12 +837,37 @@ local Overrides = {
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions3 = SelectMusicOrCourse() end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions" end
 				if list[4] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions2" end
+				if list[5] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions4" end
 			else
 				if list[2] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions" end
 				if list[3] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions2" end
+				if list[4] then SL.Global.ScreenAfter.PlayerOptions3 = "ScreenPlayerOptions4" end
 			end
 		end
-	}
+	},
+	-------------------------------------------------------------------------
+	ScreenAfterPlayerOptions4 = {
+		Values = function()
+			local choices = { "Gameplay", "Select Music", "Options1", "Options2", "Options3"  }
+			if SL.Global.MenuTimer.ScreenSelectMusic < 1 then table.remove(choices, 2) end
+			return choices
+		end,
+		OneChoiceForAllPlayers = true,
+		SaveSelections = function(self, list, pn)
+			if list[1] then SL.Global.ScreenAfter.PlayerOptions4 = Branch.GameplayScreen() end
+
+			if SL.Global.MenuTimer.ScreenSelectMusic > 1 then
+				if list[2] then SL.Global.ScreenAfter.PlayerOptions4 = SelectMusicOrCourse() end
+				if list[3] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions" end
+				if list[4] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions2" end
+				if list[5] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions3" end
+			else
+				if list[2] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions" end
+				if list[3] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions2" end
+				if list[4] then SL.Global.ScreenAfter.PlayerOptions4 = "ScreenPlayerOptions3" end
+			end
+		end
+	},
 	-------------------------------------------------------------------------
 }
 

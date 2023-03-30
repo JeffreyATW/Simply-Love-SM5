@@ -40,9 +40,12 @@ end
 -- -----------------------------------------------------------------------
 -- get timing window in milliseconds
 
-GetTimingWindow = function(n, mode)
+GetTimingWindow = function(n, mode, tenms)
 	local prefs = SL.Preferences[mode or SL.Global.GameMode]
 	local scale = PREFSMAN:GetPreference("TimingWindowScale")
+	if mode == "FA+" and tenms and n == 1 then
+		return 0.0085 * scale + prefs.TimingWindowAdd
+	end
 	return prefs["TimingWindowSecondsW"..n] * scale + prefs.TimingWindowAdd
 end
 
@@ -418,9 +421,9 @@ GetStepsCredit = function(player)
 		-- credit
 		if steps:GetAuthorCredit() ~= "" then t[#t+1] = steps:GetAuthorCredit() end
 		-- description
-		if steps:GetDescription() ~= "" then t[#t+1] = steps:GetDescription() end
+		if steps:GetDescription() ~= "" and steps:GetDescription() ~= steps:GetAuthorCredit() then t[#t+1] = steps:GetDescription() end
 		-- chart name
-		if steps:GetChartName() ~= "" then t[#t+1] = steps:GetChartName() end
+		if steps:GetChartName() ~= "" and steps:GetChartName() ~= steps:GetAuthorCredit() and steps:GetChartName() ~= steps:GetDescription() then t[#t+1] = steps:GetChartName() end
 	end
 
 	return t
@@ -585,6 +588,29 @@ IsW0Judgment = function(params, player)
 	if params.TapNoteScore == "TapNoteScore_W1" and SL.Global.GameMode == "ITG"  then
 		local prefs = SL.Preferences["FA+"]
 		local scale = PREFSMAN:GetPreference("TimingWindowScale")
+		local pn = ToEnumShortString(player)
+		local W0 = prefs["TimingWindowSecondsW1"] * scale + prefs["TimingWindowAdd"]
+		if SL[pn].ActiveModifiers.SmallerWhite then
+			W0 = 0.0085 * scale + prefs["TimingWindowAdd"]
+		end
+
+		local offset = math.abs(params.TapNoteOffset)
+		if offset <= W0 then
+			return true
+		end
+	end
+	return false
+end
+
+IsW015Judgment = function(params, player)
+	if params.Player ~= player then return false end
+	if params.HoldNoteScore then return false end
+	
+	-- Only check/update FA+ count if we received a TNS in the top window.
+	if params.TapNoteScore == "TapNoteScore_W1" and SL.Global.GameMode == "ITG"  then
+		local prefs = SL.Preferences["FA+"]
+		local scale = PREFSMAN:GetPreference("TimingWindowScale")
+		local pn = ToEnumShortString(player)
 		local W0 = prefs["TimingWindowSecondsW1"] * scale + prefs["TimingWindowAdd"]
 
 		local offset = math.abs(params.TapNoteOffset)
@@ -619,6 +645,9 @@ end
 --          "Rolls" -> total number of rolls held
 --     "totalRolls" -> total number of rolls in the chart
 -- }
+--
+-- Note: The returned table can't be used directly into CalculateExScore because the keys
+-- "HitMine", "Held", and "LetGo" aren't calculated here.
 GetExJudgmentCounts = function(player)
 	local pn = ToEnumShortString(player)
 	local stats = STATSMAN:GetCurStageStats():GetPlayerStageStats(pn)
@@ -656,11 +685,17 @@ GetExJudgmentCounts = function(player)
 			-- We need to extract the W0 count in ITG mode.
 			if window == "W1" then
 				local faPlus = SL[pn].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1].ex_counts.W0_total
+				local faPlus15 = SL[pn].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1].ex_counts.W015_total
 				-- Subtract white count from blue count
+				local number15 = number - faPlus15
 				number = number - faPlus
+				
 				-- Populate the two numbers.
 				counts["W0"] = faPlus
+				counts["W015"] = faPlus15
 				counts["W1"] = number
+				counts["W115"] = number15
+				
 			else
 				if ((window ~= "W4" and window ~= "W5") or
 						-- Only populate decent and way off windows if they're active.
@@ -743,15 +778,21 @@ CalculateExScore = function(player, ex_counts)
 		total_points = total_points + totalMines * SL.ExWeights["HitMine"];
 	end
 
-	local keys = { "W0", "W1", "W2", "W3", "W4", "W5", "Miss", "Held", "LetGo", "HitMine" }
+	-- Use W015 instead of W0, to always calculate EX score based on 15ms blue fantastic window
+	local FAplus = (SL.Metrics[SL.Global.GameMode].PercentScoreWeightW1 == SL.Metrics[SL.Global.GameMode].PercentScoreWeightW2)
+	local keys = FAplus and { "W0", "W1", "W2", "W3", "W4", "W5", "Miss", "Held", "LetGo", "HitMine" } or { "W015", "W1", "W2", "W3", "W4", "W5", "Miss", "Held", "LetGo", "HitMine" }
 	local counts = ex_counts or SL[ToEnumShortString(player)].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1].ex_counts
 	-- Just for validation, but shouldn't happen in normal gameplay.
 	if counts == nil then return 0 end
 
 	for key in ivalues(keys) do
 		local value = counts[key]
-		if value ~= nil then		
-			total_points = total_points + value * SL.ExWeights[key]
+		if value ~= nil then
+			if key == "W015" then
+				total_points = total_points + value * SL.ExWeights["W0"]
+			else
+				total_points = total_points + value * SL.ExWeights[key]
+			end
 		end
 	end
 

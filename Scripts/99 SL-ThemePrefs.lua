@@ -16,8 +16,8 @@ end
 
 SL_CustomPrefs.Get = function()
 	 -- emojis are our lingua franca for the 21st century
-	local visualStyleChoices = { "❤", "↖", "🐻", "🦆", "😺", "🎃", "🌈", "⭐", "🤔" }
-	local visualStyleValues  = { "Hearts", "Arrows", "Bears", "Ducks", "Cats", "Spooky", "Gay", "Stars", "Thonk" }
+	local visualStyleChoices = { "❤", "↖", "🐻", "🦆", "😺", "🎃", "🌈", "⭐", "🤔", "🌀" }
+	local visualStyleValues  = { "Hearts", "Arrows", "Bears", "Ducks", "Cats", "Spooky", "Gay", "Stars", "Thonk", "Technique"}
 
 	local year = Year()
 	local month = MonthOfYear()+1
@@ -60,6 +60,17 @@ SL_CustomPrefs.Get = function()
 		{
 			Default = "ITG",
 			Choices = { "ITG", "IIDX" }
+		},
+		MusicWheelGS =
+		{
+			Default = "Scorebox",
+			Choices = { "Scorebox", "Pane", "Off" }
+		},
+		FolderStats =
+		{
+			Default = true,
+			Choices = { THEME:GetString("ThemePrefs", "Show"), THEME:GetString("ThemePrefs", "Hide") },
+			Values  = { true, false }
 		},
 		AllowDanceSolo =
 		{
@@ -258,6 +269,11 @@ SL_CustomPrefs.Get = function()
 			Default = false,
 			Choices =  { THEME:GetString("ThemePrefs","Yes"), THEME:GetString("ThemePrefs", "No") },
 			Values  = { true, false }
+		},
+		TournamentMode = {
+			Default = "Off",
+			Choices = { THEME:GetString("ThemePrefs","Off"), THEME:GetString("ThemePrefs", "EX"), THEME:GetString("ThemePrefs", "ITG") },
+			Values  = { "Off", "EX", "ITG" }
 		},
 	}
 end

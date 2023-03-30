@@ -17,7 +17,7 @@ local streams, prevMeasure, streamIndex
 local bmt = {}
 
 -- How many streams to "look ahead"
-local lookAhead = mods.HideLookahead and 0 or 2
+local lookAhead = mods.MeasureCounterLookahead
 -- If you want to see more than 2 counts in advance, change the 2 to a larger value.
 -- Making the value very large will likely impact fps. -quietly
 
@@ -26,6 +26,7 @@ local lookAhead = mods.HideLookahead and 0 or 2
 local InitializeMeasureCounter = function()
 	-- SL[pn].Streams is initially set (and updated in CourseMode)
 	-- in ./ScreenGameplay in/MeasureCounterAndModsLevel.lua
+	SL[pn].MeasuresCompleted = 0
 	streams = SL[pn].Streams
 	streamIndex = 1
 	prevMeasure = -1
@@ -81,13 +82,15 @@ local GetTextForMeasure = function(currMeasure, Measures, streamIndex, isLookAhe
 
 	local text = ""
 	if Measures[streamIndex].isBreak then
-		if not isLookAhead then
-			local remainingRest = currStreamLength - currCount + 1
+		if mods.MeasureCounterLookahead > 0 then
+			if not isLookAhead then
+				local remainingRest = currStreamLength - currCount + 1
 
-			-- Ensure that the rest count is in range of the total length.
-			text = "(" .. remainingRest .. ")"
-		else
-			text = "(" .. currStreamLength .. ")"
+				-- Ensure that the rest count is in range of the total length.
+				text = "(" .. remainingRest .. ")"
+			else
+				text = "(" .. currStreamLength .. ")"
+			end
 		end
 	else
 		if not isLookAhead and currCount ~= 0 then
@@ -144,6 +147,9 @@ local Update = function(self, delta)
 				if not isLookAhead then
 					if string.find(text, "/") then
 						bmt[adjustedIndex]:diffuse(1, 1, 1, 1)
+						-- if streams.Measures[streamIndex] and not streams.Measures[streamIndex].isBreak then
+						SL[pn].MeasuresCompleted = SL[pn].MeasuresCompleted + 0.25
+						-- end
 					else
 						-- If this is a mini-break, make it lighter.
 						bmt[adjustedIndex]:diffuse(0.5, 0.5, 0.5 ,1)
@@ -192,10 +198,17 @@ for i=lookAhead+1,1,-1 do
 			local width = GetNotefieldWidth()
 			local NumColumns = GAMESTATE:GetCurrentStyle():ColumnsPerPlayer()
 			local columnWidth = width/NumColumns
+			if mods.MeasureCounterLeft then
+				columnWidth = columnWidth*4/3
+			end
 
 			-- Have descending zoom sizes for each new BMT we add.
 			self:zoom(0.35 - 0.05 * (i-1)):shadowlength(1):horizalign(center)
-			self:x(columnWidth * (0.7 * (i-1)))
+			if mods.MeasureCounterVert then
+				self:addy(20 * (i-1))
+			else
+				self:x(columnWidth/lookAhead*2 * (i-1))
+			end
 
 			if mods.MeasureCounterLeft then
 				self:addx(-columnWidth)

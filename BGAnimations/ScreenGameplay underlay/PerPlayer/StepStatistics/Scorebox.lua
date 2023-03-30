@@ -106,6 +106,31 @@ local LeaderboardRequestProcessor = function(res, master)
 			if (not (data[playerStr]["rpg"] and data[playerStr]["rpg"]["rpgLeaderboard"]) and
 					not (data[playerStr]["itl"] and data[playerStr]["itl"]["itlLeaderboard"])) then
 				SetScoreData(1, 1, "", "Chart Not Ranked", "", false, false, false)
+				
+				-- Chart isn't ranked, so populate the scorebox with local record
+				local SongOrCourse, StepsOrTrail, scorelist
+
+				if GAMESTATE:IsCourseMode() then
+					SongOrCourse = GAMESTATE:GetCurrentCourse()
+					StepsOrTrail = GAMESTATE:GetCurrentTrail(player)
+				else
+					SongOrCourse = GAMESTATE:GetCurrentSong()
+					StepsOrTrail = GAMESTATE:GetCurrentSteps(player)
+				end
+
+				scorelist = PROFILEMAN:GetProfile(player):GetHighScoreList(SongOrCourse,StepsOrTrail)
+
+				if scorelist then
+					local topscore = scorelist:GetHighScores()[1]
+					if topscore then
+						local scoredate = topscore:GetDate()
+						local scorepct = topscore:GetPercentDP()
+						local isFail = topscore:GetGrade() == "Grade_Failed" and true or false
+						
+						SetScoreData(1, 4, "", "Personal Best", ("%.2f%%"):format(scorepct * 100), true, false, isFail)
+						SetScoreData(1, 5, "", string.sub(scoredate, 1, string.find(scoredate, " ")), "", false, true, false)
+					end
+				end
 			end
 		end
 
@@ -120,6 +145,18 @@ local LeaderboardRequestProcessor = function(res, master)
 								entry["isSelf"],
 								entry["isRival"],
 								entry["isFail"])
+			end
+			entryCount = entryCount + 1
+			if entryCount > 1 then
+				for i=entryCount,5,1 do
+					SetScoreData(1, i,
+									"",
+									"",
+									"",
+									false,
+									false,
+									false)
+				end
 			end
 		end
 
@@ -139,6 +176,16 @@ local LeaderboardRequestProcessor = function(res, master)
 									entry["isFail"]
 								)
 				end
+				entryCount = entryCount + 1
+				for i=entryCount,5,1 do
+					SetScoreData(2, i,
+									"",
+									"",
+									"",
+									false,
+									false,
+									false)
+				end
 			end
 		end
 
@@ -157,6 +204,16 @@ local LeaderboardRequestProcessor = function(res, master)
 									entry["isRival"],
 									entry["isFail"]
 								)
+				end
+				numEntries = numEntries + 1
+				for i=numEntries,5,1 do
+					SetScoreData(3, i,
+									"",
+									"",
+									"",
+									false,
+									false,
+									false)
 				end
 			end
 		end
@@ -240,6 +297,20 @@ local af = Def.ActorFrame{
 			-- Should be fine though.
 			if sendRequest then
 				self:GetParent():GetChild("Name1"):settext("Loading...")
+				self:GetParent():GetChild("Name2"):settext("")
+				self:GetParent():GetChild("Name3"):settext("")
+				self:GetParent():GetChild("Name4"):settext("")
+				self:GetParent():GetChild("Name5"):settext("")
+				self:GetParent():GetChild("Score1"):settext("")
+				self:GetParent():GetChild("Score2"):settext("")
+				self:GetParent():GetChild("Score3"):settext("")
+				self:GetParent():GetChild("Score4"):settext("")
+				self:GetParent():GetChild("Score5"):settext("")
+				self:GetParent():GetChild("Rank1"):diffusealpha(0)
+				self:GetParent():GetChild("Rank2"):settext("")
+				self:GetParent():GetChild("Rank3"):settext("")
+				self:GetParent():GetChild("Rank4"):settext("")
+				self:GetParent():GetChild("Rank5"):settext("")
 				self:playcommand("MakeGrooveStatsRequest", {
 					endpoint="player-leaderboards.php?"..NETWORK:EncodeQueryParameters(query),
 					method="GET",

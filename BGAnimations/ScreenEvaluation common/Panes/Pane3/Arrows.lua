@@ -1,6 +1,8 @@
 local player = ...
 local pn = ToEnumShortString(player)
 local track_missbcheld = SL[pn].ActiveModifiers.MissBecauseHeld
+local track_earlyjudgments = SL[pn].ActiveModifiers.TrackEarlyJudgments
+local ArrowColors = { Color.Red, Color.Blue, Color.Green, Color.Yellow }
 
 -- a string representing the NoteSkin the player was using
 local noteskin = GAMESTATE:GetPlayerState(player):GetCurrentPlayerOptions():NoteSkin()
@@ -14,8 +16,12 @@ local game  = GAMESTATE:GetCurrentGame():GetName()
 local style = GAMESTATE:GetCurrentStyle()
 local style_name = style:GetName()
 local num_columns = style:ColumnsPerPlayer()
+local activeGraph = 1
 
 local rows = { "W1", "W2", "W3", "W4", "W5", "Miss" }
+if SL[pn].ActiveModifiers.ShowFaPlusWindow then
+	rows = { 'W0', 'W1', 'W2', 'W3', 'W4', 'W5', 'Miss' }
+end
 local cols = {}
 
 -- loop num_columns number of time to fill the cols table with
@@ -42,6 +48,10 @@ local row_height = box_height/#rows
 
 local af = Def.ActorFrame{}
 af.InitCommand=function(self) self:xy(-104, _screen.cy-40) end
+af.GraphCommand=function(self, params)
+	activeGraph = params.graph
+	self:playcommand("Update")
+end
 
 
 for i, column in ipairs( cols ) do
@@ -61,24 +71,47 @@ for i, column in ipairs( cols ) do
 	af[#af+1] = LoadActor(THEME:GetPathB("","_modules/NoteSkinPreview.lua"), {noteskin_name=noteskin, column=column.Name})..{
 		OnCommand=function(self)
 			self:x( _x ):zoom(0.4):visible(true)
+		end,
+		UpdateCommand=function(self)
+			if activeGraph ~= 2 then
+				self:stoptweening():stopeffect()
+			else
+				self:glowshift():effectcolor1(ArrowColors[i]):effectcolor2(ArrowColors[i])
+			end
 		end
 	}
 
 	local miss_bmt = nil
+	local judge_bmt = {}
 
 	-- for each possible judgment
 	for j, judgment in ipairs(rows) do
 		-- don't add rows for TimingWindows that were turned off, but always add Miss
-		if SL[pn].ActiveModifiers.TimingWindows[j] or j==#rows then
+		if SL[pn].ActiveModifiers.TimingWindows[j] or j==#rows or (SL[pn].ActiveModifiers.ShowFaPlusWindow and SL[pn].ActiveModifiers.TimingWindows[j-1]) then
 			-- add a BitmapText actor to be the number for this column
 			af[#af+1] = LoadFont("Common Normal")..{
 				Text=SL[pn].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1].column_judgments[i][judgment],
 				InitCommand=function(self)
 					self:xy(_x, j*row_height + 4)
 						:zoom(0.9)
-					if j == #rows then miss_bmt = self end
+					if j == #rows then miss_bmt = self else judge_bmt[j] = self end
 				end
 			}
+			
+			if track_earlyjudgments and j ~= 1 then
+				-- the number of early judgments for this column
+				af[#af+1] = LoadFont("Common Normal")..{
+					Text=SL[pn].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1].column_judgments[i][judgment .. "early"],
+					InitCommand=function(self)
+						self:xy(_x - 1, j*row_height):zoom(0.65):halign(1)
+					end,
+					OnCommand=function(self)
+						if judge_bmt[j] ~= nil then
+							self:x( self:GetX() - judge_bmt[j]:GetWidth()/2 )
+						end
+					end
+				}
+			end
 		end
 	end
 

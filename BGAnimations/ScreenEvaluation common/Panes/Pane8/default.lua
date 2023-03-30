@@ -16,15 +16,19 @@ local pane = Def.ActorFrame{
 local args = { Player=player, RowHeight=22, HideScores=true }
 
 args.NumHighScores = 10
-pane[#pane+1] = LoadActor(THEME:GetPathB("", "_modules/HighScoreList.lua"), args)
 
 pane[#pane+1] = Def.Sprite{
 	Texture=THEME:GetPathG("","GrooveStats.png"),
 	Name="GrooveStats_Logo",
 	InitCommand=function(self)
-		self:zoom(0.3)
-		self:addx(165):addy(25)
+		self:zoom(1.5)
+		self:addx(0):addy(100)
+		self:diffusealpha(0.5)
 	end,
 }
+
+pane[#pane+1] = LoadActor(THEME:GetPathB("", "_modules/HighScoreList.lua"), args)
+
+
 
 return pane

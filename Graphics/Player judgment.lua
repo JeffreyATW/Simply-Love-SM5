@@ -3,6 +3,10 @@ local pn = ToEnumShortString(player)
 local mods = SL[pn].ActiveModifiers
 local sprite
 
+if mods.JudgmentBack then
+	return Def.ActorFrame{Name="Player Judgment"}
+end
+
 ------------------------------------------------------------
 -- A profile might ask for a judgment graphic that doesn't exist
 -- If so, use the first available Judgment graphic
@@ -26,11 +30,28 @@ local TNSFrames = {
 	TapNoteScore_Miss = 5
 }
 
+local enabledTimingWindows = {}
+for i = 1, 3 do
+    if mods.TimingWindows[i] then
+        enabledTimingWindows[#enabledTimingWindows+1] = i
+    end
+end
+
+local maxTimingOffset = GetTimingWindow(enabledTimingWindows[#enabledTimingWindows])
+
+local font = mods.ComboFont
+if font == "Wendy" or font == "Wendy (Cursed)" then
+	font = "Wendy/_wendy small"
+else
+	font = "_Combo Fonts/" .. font .. "/"
+end
+
 return Def.ActorFrame{
 	Name="Player Judgment",
 	InitCommand=function(self)
 		local kids = self:GetChildren()
 		sprite = kids.JudgmentWithOffsets
+		sprite2 = kids.JudgmentDouble
 	end,
 	JudgmentMessageCommand=function(self, param)
 		if param.Player ~= player then return end
@@ -47,7 +68,7 @@ return Def.ActorFrame{
 		-- If the judgment font contains a graphic for the additional white fantastic window...
 		if sprite:GetNumStates() == 7 or sprite:GetNumStates() == 14 then
 			if tns == "W1" then
-				if mods.ShowFaPlusWindow then
+				if mods.ShowFaPlusWindow or mods.FAPlusGradual then
 					-- If this W1 judgment fell outside of the FA+ window, show the white window
 					--
 					-- Treat Autoplay specially. The TNS might be out of the range, but
@@ -56,6 +77,11 @@ return Def.ActorFrame{
 					if not IsW0Judgment(param, player) and not IsAutoplay(player) then
 						frame = 1
 					end
+					
+					if mods.FAPlusGradual and mods.SmallerWhite and IsW015Judgment(param,player) then
+						frame = 0
+					end
+					
 				end
 				-- We don't need to adjust the top window otherwise.
 			else
@@ -76,6 +102,25 @@ return Def.ActorFrame{
 			frame = frame * 2
 			if not param.Early then frame = frame + 1 end
 		end
+		
+		-- support for "held miss" sprite on the "early miss" column
+		-- currently only a few judgment fonts do this... not sure if I should write a toggle
+		-- option in the future since turning it on for a judgment without the distinction
+		-- would accomplish nothing
+		if tns == "Miss" then
+			local isHeld = false
+			for col,tapnote in pairs(param.Notes) do
+				local tnt = ToEnumShortString(tapnote:GetTapNoteType())
+				if tnt == "Tap" or tnt == "HoldHead" or tnt == "Lift" then
+					local tns = ToEnumShortString(param.TapNoteScore)
+					if tnt ~= "Lift" and tns == "Miss" and tapnote:GetTapNoteResult():GetHeld() then
+						isHeld = true
+					end
+				end
+			end
+			
+			if isHeld and (sprite:GetNumStates() == 12 or sprite:GetNumStates() == 14) then frame = frame - 1 end
+		end
 
 		self:playcommand("Reset")
 
@@ -84,8 +129,8 @@ return Def.ActorFrame{
 		if mods.JudgmentTilt then
 			if tns ~= "Miss" then
 				-- How much to rotate.
-				-- We cap it at 50ms (15px) since anything after likely to be too distracting.
-				local offset = math.min(math.abs(param.TapNoteOffset), 0.050) * 300
+				-- We cap it at Great since anything after likely to be too distracting.
+				local offset = math.min(math.min(math.abs(param.TapNoteOffset), maxTimingOffset) * 300 * mods.TiltMultiplier, 180)
 				-- Which direction to rotate.
 				local direction = param.TapNoteOffset < 0 and -1 or 1
 				sprite:rotationz(direction * offset)
@@ -96,6 +141,27 @@ return Def.ActorFrame{
 		end
 		-- this should match the custom JudgmentTween() from SL for 3.95
 		sprite:zoom(0.8):decelerate(0.1):zoom(0.75):sleep(0.6):accelerate(0.2):zoom(0)
+		
+		if mods.FAPlusGradual and IsW0Judgment(param, player) then
+			local grade = (math.abs(param.TapNoteOffset) - 0.005) * 100
+			sprite2:visible(true):diffusealpha(grade):setstate(frame+2)
+			
+			if mods.JudgmentTilt then
+				if tns ~= "Miss" then
+					-- How much to rotate.
+					-- We cap it at Great since anything after likely to be too distracting.
+					local offset = math.min(math.min(math.abs(param.TapNoteOffset), maxTimingOffset) * 300 * mods.TiltMultiplier, 180)
+					-- Which direction to rotate.
+					local direction = param.TapNoteOffset < 0 and -1 or 1
+					sprite2:rotationz(direction * offset)
+				else
+					-- Reset rotations on misses so it doesn't use the previous note's offset.
+					sprite2:rotationz(0)
+				end
+			end
+			-- this should match the custom JudgmentTween() from SL for 3.95
+			sprite2:zoom(0.8):decelerate(0.1):zoom(0.75):sleep(0.6):accelerate(0.2):zoom(0)
+		end
 	end,
 
 	Def.Sprite{
@@ -116,5 +182,63 @@ return Def.ActorFrame{
 			end
 		end,
 		ResetCommand=function(self) self:finishtweening():stopeffect():visible(false) end
-	}
+	},
+	
+	Def.Sprite{
+		Name="JudgmentDouble",
+		InitCommand=function(self)
+			-- animate(false) is needed so that this Sprite does not automatically
+			-- animate its way through all available frames; we want to control which
+			-- frame displays based on what judgment the player earns
+			self:animate(false):visible(false)
+
+			-- if we are on ScreenEdit, judgment graphic is always "Love"
+			-- because ScreenEdit is a mess and not worth bothering with.
+			if string.match(tostring(SCREENMAN:GetTopScreen()), "ScreenEdit") then
+				self:Load( THEME:GetPathG("", "_judgments/Love") )
+
+			else
+				self:Load( THEME:GetPathG("", "_judgments/" .. file_to_load) )
+			end
+		end,
+		ResetCommand=function(self) self:finishtweening():stopeffect():visible(false) end
+	},
+	
+	LoadFont(font)..{
+        Text = "",
+        InitCommand = function(self)
+            self:zoom(1):shadowlength(1):y(-35)
+			if font == "Wendy" or font == "Wendy Cursed" then
+				self:zoom(0.5)
+			end
+        end,
+        JudgmentMessageCommand = function(self, params)
+            if params.Player ~= player then return end
+            if not params.Notes then return end
+			if not mods.ShowHeldMiss then return end
+
+			local isHeld = false
+			for col,tapnote in pairs(params.Notes) do
+				local tnt = ToEnumShortString(tapnote:GetTapNoteType())
+				if tnt == "Tap" or tnt == "HoldHead" or tnt == "Lift" then
+					local tns = ToEnumShortString(params.TapNoteScore)
+					if tnt ~= "Lift" and tns == "Miss" and tapnote:GetTapNoteResult():GetHeld() then
+						isHeld = true
+					end
+				end
+			end
+			
+			if isHeld then
+				self:finishtweening()
+				self:diffusealpha(1)
+					:settext("HELD")
+					:diffuse(color("#ff0000"))
+					:sleep(0.5)
+					:diffusealpha(0)
+			else
+				self:finishtweening()
+				self:diffusealpha(0)
+			end
+        end
+    },
 }

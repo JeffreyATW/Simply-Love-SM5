@@ -1,4 +1,4 @@
-if not IsServiceAllowed(SL.GrooveStats.AutoSubmit) then return end
+if not IsServiceAllowed(SL.GrooveStats.AutoSubmit) or GAMESTATE:IsCourseMode() then return end
 
 local NumEntries = 10
 
@@ -12,17 +12,16 @@ local SetEntryText = function(rank, name, score, date, actor)
 end
 
 local GetMachineTag = function(gsEntry)
-	if not gsEntry then return end
-	if gsEntry["machineTag"] then
-		-- Make sure we only use up to 4 characters for space concerns.
-		return gsEntry["machineTag"]:sub(1, 4):upper()
-	end
-
-	-- User doesn't have a machineTag set. We'll "make" one based off of
-	-- their name.
+	if not gsEntry then return end	
+	-- Groovestats username.
 	if gsEntry["name"] then
 		-- 4 Characters is the "intended" length.
-		return gsEntry["name"]:sub(1,4):upper()
+		return gsEntry["name"]
+	end
+
+	if gsEntry["machineTag"] then
+		-- User doesn't have a username (?).
+		return gsEntry["machineTag"]:sub(1, 4):upper()
 	end
 
 	return ""
@@ -46,12 +45,21 @@ local GetJudgmentCounts = function(player)
 		["Rolls"] = "rollsHeld",
 		["totalRolls"] = "totalRolls"
 	}
+	local translation15 = {
+		["W015"] = "fantasticPlus",
+		["W115"] = "fantastic"
+	}
 
 	local judgmentCounts = {}
 
 	for key, value in pairs(counts) do
 		if translation[key] ~= nil then
 			judgmentCounts[translation[key]] = value
+		end
+	end
+	for key, value in pairs(counts) do
+		if translation15[key] ~= nil then
+			judgmentCounts[translation15[key]] = value
 		end
 	end
 
@@ -129,6 +137,9 @@ local AutoSubmitRequestProcessor = function(res, overlay)
 			local highScorePane = panes:GetChild("Pane8_SideP"..i):GetChild("")
 			local QRPane = panes:GetChild("Pane7_SideP"..i):GetChild("")
 
+			local RPGPane = panes:GetChild("Pane9_SideP"..i):GetChild("")
+			local ITLPane = panes:GetChild("Pane10_SideP"..i):GetChild("")
+
 			-- If only one player is joined, we then need to update both panes with only
 			-- one players' data.
 			local side = i
@@ -188,6 +199,64 @@ local AutoSubmitRequestProcessor = function(res, overlay)
 						end
 					end
 
+					if data[playerStr]["rpg"] then
+						local rpgEntry = 1
+						local rpgRival = 1
+						for gsEntry in ivalues(data[playerStr]["rpg"]["rpgLeaderboard"]) do
+							local entry = RPGPane:GetChild("HighScoreList"):GetChild("HighScoreEntry"..rpgEntry)
+							entry:stoptweening()
+							entry:diffuse(Color.White)
+							SetEntryText(
+								gsEntry["rank"]..".",
+								GetMachineTag(gsEntry),
+								string.format("%.2f%%", gsEntry["score"]/100),
+								ParseGroovestatsDate(gsEntry["date"]),
+								entry
+							)
+							if gsEntry["isRival"] then
+								entry:diffuse(color("#BD94FF"))
+								rpgRival = rpgRival + 1
+							elseif gsEntry["isSelf"] then
+								entry:diffuse(color("#A1FF94"))
+								-- personalRank = gsEntry["rank"]
+							end
+
+							if gsEntry["isFail"] then
+								entry:GetChild("Score"):diffuse(Color.Red)
+							end
+							rpgEntry = rpgEntry + 1
+						end
+					end
+
+					if data[playerStr]["itl"] then
+						local itlEntry = 1
+						local itlRival = 1
+						for gsEntry in ivalues(data[playerStr]["itl"]["itlLeaderboard"]) do
+							local entry = ITLPane:GetChild("HighScoreList"):GetChild("HighScoreEntry"..itlEntry)
+							entry:stoptweening()
+							entry:diffuse(Color.White)
+							SetEntryText(
+								gsEntry["rank"]..".",
+								GetMachineTag(gsEntry),
+								string.format("%.2f%%", gsEntry["score"]/100),
+								ParseGroovestatsDate(gsEntry["date"]),
+								entry
+							)
+							if gsEntry["isRival"] then
+								entry:diffuse(color("#BD94FF"))
+								itlRival = itlRival + 1
+							elseif gsEntry["isSelf"] then
+								entry:diffuse(color("#A1FF94"))
+								-- personalRank = gsEntry["rank"]
+							end
+
+							if gsEntry["isFail"] then
+								entry:GetChild("Score"):diffuse(Color.Red)
+							end
+							itlEntry = itlEntry + 1
+						end
+					end
+
 					-- Only display the overlay on the sides that are actually joined.
 					if ToEnumShortString("PLAYER_P"..i) == "P"..side and (data[playerStr]["rpg"] or data[playerStr]["itl"]) then
 						local eventAf = overlay:GetChild("AutoSubmitMaster"):GetChild("EventOverlay"):GetChild("P"..i.."EventAf")
@@ -204,10 +273,23 @@ local AutoSubmitRequestProcessor = function(res, overlay)
 							recordText:visible(true)
 							GSIcon:visible(true)
 							recordText:diffuseshift():effectcolor1(Color.White):effectcolor2(Color.Yellow):effectperiod(3)
+							local soundDir = THEME:GetCurrentThemeDirectory() .. "Sounds/"
 							if personalRank == 1 then
 								recordText:settext("World Record!")
+								-- Play random sound in Sounds/Evaluation WR/
+								soundDir = soundDir .. "Evaluation WR/"
+								audio_files = findFiles(soundDir)
+								if #audio_files > 0 then
+									SOUND:PlayOnce(audio_files[math.random(#audio_files)])
+								end
 							else
 								recordText:settext("Personal Best!")
+								-- Play random sound in Sounds/Evaluation PB/
+								soundDir = soundDir .. "Evaluation PB/"
+								audio_files = findFiles(soundDir)
+								if #audio_files > 0 then
+									SOUND:PlayOnce(audio_files[math.random(#audio_files)])
+								end
 							end
 							local recordTextXStart = recordText:GetX() - recordText:GetWidth()*recordText:GetZoom()/2
 							local GSIconWidth = GSIcon:GetWidth()*GSIcon:GetZoom()

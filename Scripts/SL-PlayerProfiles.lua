@@ -20,7 +20,7 @@ local permitted_profile_settings = {
 	JudgmentGraphic  = "string",
 	ComboFont        = "string",
 	HoldJudgment     = "string",
-	BackgroundFilter = "string",
+	BackgroundFilter = "number",
 
 	----------------------------------
 	-- "Advanced Modifiers"
@@ -36,35 +36,72 @@ local permitted_profile_settings = {
 
 	LifeMeterType        = "string",
 	DataVisualizations   = "string",
+	StepStatsExtra       = "string",
 	TargetScore          = "number",
 	ActionOnMissedTarget = "string",
 
 	MeasureCounter       = "string",
 	MeasureCounterLeft   = "boolean",
 	MeasureCounterUp     = "boolean",
-	HideLookahead        = "boolean",
+	MeasureCounterVert   = "boolean",
+	BrokenRun            = "boolean",
+	RunTimer             = "boolean",
+	MeasureCounterLookahead = "number",
+	
+	RainbowMax           = "boolean",
+	ResponsiveColors     = "boolean",
+	ShowLifePercent      = "boolean",
+	
+	MiniIndicator		 = "string",
+	MiniIndicatorColor	 = "string",
 
 	ColumnFlashOnMiss    = "boolean",
 	SubtractiveScoring   = "boolean",
 	Pacemaker            = "boolean",
 	MissBecauseHeld      = "boolean",
+	TrackEarlyJudgments  = "boolean",
 	NPSGraphAtTop        = "boolean",
 	JudgmentTilt         = "boolean",
 	ColumnCues           = "boolean",
-	DisplayScorebox      = "boolean",
+	ColumnCountdown      = "boolean",
+	ShowHeldMiss         = "boolean",
 
 	ErrorBar             = "string",
 	ErrorBarUp           = "boolean",
 	ErrorBarMultiTick    = "boolean",
-	ErrorBarTrim         = "boolean",
+	ErrorBarCap    		 = "number",
 
 	ShowFaPlusWindow = "boolean",
 	ShowEXScore      = "boolean",
 	ShowFaPlusPane   = "boolean",
+	SmallerWhite     = "boolean",
 
 	VisualDelay          = "string",
+	NotefieldShift       = "number",
+	
+	PackBanner           = "boolean",
+	StepInfo             = "boolean",
+	DisplayScorebox      = "boolean",
+	
+	FlashMiss            = "boolean",
+	FlashWayOff          = "boolean",
+	FlashDecent          = "boolean",
+	FlashGreat           = "boolean",
+	FlashExcellent       = "boolean",
+	FlashFantastic       = "boolean",
+	
+	BeatBars			 = "string",
+	TiltMultiplier       = "number",
 
-
+	GrowCombo			 = "boolean",
+	SpinCombo			 = "boolean",
+	WildCombo			 = "boolean",
+	RainbowComboOptions	 = "string",
+	TiltOptions			 = "string",
+	Waterfall			 = "boolean",
+	FadeFantastic		 = "boolean",
+	NoBar				 = "boolean",
+	
 	----------------------------------
 	-- Profile Settings without OptionRows
 	-- these settings are saved per-profile, but are transparently managed by the theme
@@ -187,11 +224,8 @@ SaveProfileCustom = function(profile, dir)
 			IniFile.WriteFile( path, {[theme_name]=output} )
 
 			-- Write to the ITL file if we need to.
-			-- The ITLData table will only contain data for memory cards.
-			if #SL[pn].ITLData ~= 0 then
-				WriteItlFile(dir, table.concat(SL[pn].ITLData, ""))
-			end
-
+			-- This is relevant for memory cards.
+			WriteItlFile(player)
 			break
 		end
 	end

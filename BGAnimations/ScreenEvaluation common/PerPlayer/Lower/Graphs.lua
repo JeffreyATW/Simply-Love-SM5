@@ -8,6 +8,7 @@ local GraphWidth  = THEME:GetMetric("GraphDisplay", "BodyWidth")
 local GraphHeight = THEME:GetMetric("GraphDisplay", "BodyHeight")
 
 local af = Def.ActorFrame{
+	Name="JudgeGraph",
 	InitCommand=function(self)
 		self:y(_screen.cy + 124)
 		if NumPlayers == 1 then
@@ -21,6 +22,9 @@ local af = Def.ActorFrame{
 	Def.Quad{
 		InitCommand=function(self)
 			self:zoomto(GraphWidth, GraphHeight):diffuse(color("#101519")):vertalign(top)
+			if ThemePrefs.Get("VisualStyle") == "Technique" then
+				self:diffusealpha(0.75)
+			end
 		end
 	},
 }
@@ -74,8 +78,8 @@ af[#af+1] = Def.GraphDisplay{
 
 		local playerStageStats = STATSMAN:GetCurStageStats():GetPlayerStageStats(player)
 		local stageStats = STATSMAN:GetCurStageStats()
-		self:Set(stageStats, playerStageStats)
 
+		self:Set(stageStats, playerStageStats)
 		if GAMESTATE:IsCourseMode() then
 			-- hide the GraphDisplay's stroke ("Line")
 			self:GetChild("Line"):visible(false)
@@ -96,6 +100,7 @@ af[#af+1] = Def.Quad{
 	end
 }
 
+local pss = STATSMAN:GetCurStageStats():GetPlayerStageStats(player)
 local storage = SL[pn].Stages.Stats[SL.Global.Stages.PlayedThisGame + 1]
 
 if storage.DeathSecond ~= nil then

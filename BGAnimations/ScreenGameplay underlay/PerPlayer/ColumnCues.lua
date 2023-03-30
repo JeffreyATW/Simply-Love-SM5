@@ -32,7 +32,7 @@ else
 end
 
 local Update = function(self, delta)
-	if curIndex <= #columnCues then
+	if columnCues ~= nil and curIndex <= #columnCues then
 		local curTime = playerState:GetSongPosition():GetMusicSecondsVisible()
 		local columnCue = columnCues[curIndex]
 		local startTime = columnCue.startTime
@@ -90,6 +90,48 @@ local af = Def.ActorFrame{
 	end
 }
 
+local IsReversedColumn = function(player, columnIndex)
+	local columns = {}
+	for i=1, numColumns do
+		columns[#columns + 1] = false
+	end
+
+	local opts = GAMESTATE:GetPlayerState(player):GetCurrentPlayerOptions()
+	if opts:Reverse() == 1 then
+		for column,val in ipairs(columns) do
+			columns[column] = not val
+		end
+	end
+
+	if opts:Alternate() == 1 then
+		for column,val in ipairs(columns) do
+			if column % 2 == 0 then
+				columns[column] = not val
+			end
+		end
+	end
+
+	if opts:Split() == 1 then
+		for column,val in ipairs(columns) do
+			if column > numColumns / 2 then
+				columns[column] = not val
+			end
+		end
+	end
+
+	if opts:Cross() == 1 then
+		local firstChunk = numColumns / 4
+		local lastChunk = numColumns - firstChunk
+		for column,val in ipairs(columns) do
+			if column > firstChunk and column <= lastChunk then
+				columns[column] = not val
+			end
+		end
+	end
+
+	return columns[columnIndex]
+end
+
 for columnIndex=1,numColumns do
 	af[#af+1] = Def.ActorFrame{
 		Name="Column"..columnIndex,
@@ -111,8 +153,7 @@ for columnIndex=1,numColumns do
 					:sleep(flashDuration - 2*fadeTime)
 					:accelerate(fadeTime)
 					:diffuse(0,0,0,0)
-
-				if flashDuration >= 5 then
+				if flashDuration >= 5 and mods.ColumnCountdown then
 					breakTime = flashDuration
 					if text ~= nil then
 						text:stoptweening()
@@ -136,7 +177,13 @@ for columnIndex=1,numColumns do
 					:diffuse(0,0,0,0)
 					:horizalign(center)
 					:x((columnIndex - (numColumns/2 + 0.5)) * (width/numColumns))
-					:y(80)
+				
+				if IsReversedColumn(player, columnIndex) then
+					self:y(260+mods.NotefieldShift)
+				else
+					self:y(80+mods.NotefieldShift)
+				end
+					
 				text = self
 			end,
 			UpdateBreakCommand=function(self)

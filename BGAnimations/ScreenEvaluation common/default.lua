@@ -1,5 +1,5 @@
 local Players = GAMESTATE:GetHumanPlayers()
-local NumPanes = SL.Global.GameMode=="Casual" and 1 or 8
+local NumPanes = SL.Global.GameMode=="Casual" and 1 or 10
 
 local InputHandler = nil
 local EventOverlayInputHandler = nil
@@ -55,6 +55,9 @@ t[#t+1] = LoadActor("./Shared/TitleAndBanner.lua")
 -- under the banner
 t[#t+1] = LoadActor("./Shared/SongFeatures.lua")
 
+-- text to display Song or Course Length
+t[#t+1] = LoadActor("./Shared/SongLength.lua")
+
 -- store some attributes of this playthrough of this song in the global SL table
 -- for later retrieval on ScreenEvaluationSummary
 t[#t+1] = LoadActor("./Shared/GlobalStorage.lua")
@@ -82,6 +85,11 @@ for player in ivalues(Players) do
 	-- Generate the .itl file for the player.
 	-- When the event isn't active, this actor is nil.
 	t[#t+1] = LoadActor("./PerPlayer/ItlFile.lua", player)
+
+	-- Generate the .rpg file for the player to keep track of best rate mod on the songwheel
+	-- When the event isn't active, this actor is nil.
+	t[#t+1] = LoadActor("./PerPlayer/RpgRatemod.lua", player)
+	
 end
 
 -- -----------------------------------------------------------------------

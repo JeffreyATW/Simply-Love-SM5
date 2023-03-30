@@ -3,6 +3,9 @@ if SL.Global.GameMode == "Casual" then return end
 
 local player = ...
 local mods = SL[ToEnumShortString(player)].ActiveModifiers
+local metrics = SL.Metrics[SL.Global.GameMode]
+-- a flag to determine if we are using a GameMode that utilizes FA+ timing windows
+local FAplus = (metrics.PercentScoreWeightW1 == metrics.PercentScoreWeightW2)
 
 if mods.ColumnFlashOnMiss then
 	local po = GAMESTATE:GetPlayerState(player):GetPlayerOptions('ModsLevel_Preferred')
@@ -62,8 +65,18 @@ if mods.ColumnFlashOnMiss then
 			if params.Player == player and (params.Notes or params.Holds) then
 				for i,col in pairs(params.Notes or params.Holds) do
 					local tns = ToEnumShortString(params.TapNoteScore or params.HoldNoteScore)
-					if tns == "Miss" or tns == "MissedHold" then
-						columns[column_mapping[i]]:playcommand("Flash")
+					if (tns == "Miss" or tns == "MissedHold") and mods.FlashMiss then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
+					elseif not FAplus and tns == "W5" and mods.FlashWayOff then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
+					elseif (FAplus and tns == "W5" and mods.FlashDecent) or (not FAplus and tns == "W4" and mods.FlashDecent) then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
+					elseif (FAplus and tns == "W4" and mods.FlashGreat) or (not FAplus and tns == "W3" and mods.FlashGreat) then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
+					elseif (FAplus and tns == "W3" and mods.FlashExcellent) or (not FAplus and tns == "W2" and mods.FlashExcellent) then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
+					elseif (FAplus and tns == "W2" and mods.FlashFantastic) or (tns == "W1" and mods.FlashFantastic) then
+						columns[column_mapping[i]]:playcommand("Flash", {tns=tns})
 					end
 				end
 			end
@@ -81,9 +94,26 @@ if mods.ColumnFlashOnMiss then
 					:setsize(width/NumColumns, _screen.h - y_offset)
 					:fadebottom(0.333)
 	        end,
-			FlashCommand=function(self)
-				self:diffuse(1,0,0,0.66)
-					:accelerate(0.165):diffuse(0,0,0,0)
+			FlashCommand=function(self, params)
+				if params.tns == "Miss" or tns == "MissedHold" then
+					self:diffuse(1,0,0,0.66)
+				elseif not FAplus and params.tns == "W5" then
+					self:diffuse(0.78, 0.52, 0.36, 0.66)
+				elseif (FAplus and params.tns == "W5") or (not FAplus and params.tns == "W4") then
+					self:diffuse(0.70, 0.36, 1.00, 0.66)
+				elseif (FAplus and params.tns == "W4") or (not FAplus and params.tns == "W3") then
+					self:diffuse(0.40, 0.79, 0.33, 0.66)
+				elseif (FAplus and params.tns == "W3") or (not FAplus and params.tns == "W2") then
+					self:diffuse(0.88, 0.61, 0.09, 0.66)
+				elseif (FAplus and params.tns == "W2") or params.tns == "W1" then
+					self:diffuse(0.13, 0.80, 0.91, 0.66)
+				end
+				
+				if params.tns == "Miss" or tns == "MissedHold" then
+					self:accelerate(0.16):diffuse(0,0,0,0)
+				else
+					self:accelerate(0.33):diffuse(0,0,0,0)
+				end
 			end
 		}
 	end

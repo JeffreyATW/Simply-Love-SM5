@@ -17,6 +17,8 @@ local AwardMap = {
 	["StageAward_FullComboW4"] = 4,
 }
 
+local ClearLamp = { color("#0000CC"), color("#990000") }
+
 local function GetLamp(song)
 	if not song then return nil end
 
@@ -45,9 +47,14 @@ local function GetLamp(song)
 				award = "StageAward_FullComboW4"
 			end
 		end
-
+		
 		if AwardMap[award] ~= nil then
 			best_lamp = math.min(best_lamp and best_lamp or 999, AwardMap[award])
+		end
+		
+		if best_lamp == nil then
+			if score:GetGrade() == "Grade_Failed" then best_lamp = 52
+			else best_lamp = 51 end
 		end
 	end
 
@@ -126,7 +133,7 @@ return Def.ActorFrame{
 					if SL[pn].ITLData["pathMap"][song_dir] ~= nil then
 						local hash = SL[pn].ITLData["pathMap"][song_dir]
 						if SL[pn].ITLData["hashMap"][hash] ~= nil then
-							itl_lamp = 6 - SL[pn].ITLData["hashMap"][hash]["clearType"]
+							itl_lamp = 5 - SL[pn].ITLData["hashMap"][hash]["clearType"]
 						end
 					end
 				end
@@ -134,18 +141,29 @@ return Def.ActorFrame{
 
 			if itl_lamp ~= nil then
 				-- Disable for normal clear types. The wheel grade should cover it.
-				if itl_lamp == 5 then
-					self:visible(false)
+				if itl_lamp >= 4 then
+					self:visible(true):stopeffect()
+					self:diffuse(ClearLamp[1])
 				else
 					self:visible(true)
 					self:diffuseshift():effectperiod(0.8)
-					self:effectcolor1(SL.JudgmentColors["FA+"][itl_lamp])
-					self:effectcolor2(lerp_color(0.70, color("#ffffff"), SL.JudgmentColors["FA+"][itl_lamp]))
+					if itl_lamp == 0 then
+						-- Quinted, use a special color
+						local ItlPink = color("1,0.2,0.406,1")
+						self:effectcolor1(ItlPink)
+						self:effectcolor2(lerp_color(0.70, color("#ffffff"), ItlPink))
+					else
+						self:effectcolor1(SL.JudgmentColors["ITG"][itl_lamp])
+						self:effectcolor2(lerp_color(0.70, color("#ffffff"), SL.JudgmentColors["ITG"][itl_lamp]))
+					end
 				end
 			else
 				local lamp = GetLamp(param.Song)
 				if lamp == nil then
 					self:visible(false)
+				elseif lamp > 50 then
+					self:visible(true)
+					self:diffuse(ClearLamp[lamp - 50])
 				else
 					self:visible(true)
 					self:diffuseshift():effectperiod(0.8)

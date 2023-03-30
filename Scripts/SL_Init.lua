@@ -11,8 +11,9 @@ local PlayerDefaults = {
 				HoldJudgment = "Love 1x2 (doubleres).png",
 				NoteSkin = nil,
 				Mini = "0%",
-				BackgroundFilter = "Off",
+				BackgroundFilter = 0,
 				VisualDelay = "0ms",
+				NotefieldShift = 0,
 
 				HideTargets = false,
 				HideSongBG = false,
@@ -28,6 +29,7 @@ local PlayerDefaults = {
 				MeasureCounterLeft = true,
 				MeasureCounterUp = false,
 				DataVisualizations = "None",
+				StepStatsExtra = "None",
 				TargetScore = 11,
 				ActionOnMissedTarget = "Nothing",
 				Pacemaker = false,
@@ -36,17 +38,28 @@ local PlayerDefaults = {
 				NPSGraphAtTop = false,
 				JudgmentTilt = false,
 				ColumnCues = false,
+				ColumnCountdown = false,
+				ShowHeldMiss = false,
 				DisplayScorebox = true,
 
 				ErrorBar = "None",
 				ErrorBarUp = false,
 				ErrorBarMultiTick = false,
-				ErrorBarTrim = false,
+				ErrorBarCap = 5,
 
 				TimingWindows = {true, true, true, true, true},
 				ShowFaPlusWindow = false,
 				ShowEXScore = false,
 				ShowFaPlusPane = true,
+				
+				FlashMiss = true,
+				FlashWayOff = false,
+				FlashDecent = false,
+				FlashGreat = false,
+				FlashExcellent = false,
+				FlashFantastic = false,
+				
+				TiltMultiplier = 1,
 			}
 			-- TODO(teejusb): Rename "Streams" as the data contains more information than that.
 			self.Streams = {
@@ -111,6 +124,7 @@ local GlobalDefaults = {
 			}
 			self.Stages = {
 				PlayedThisGame = 0,
+				Restarts = 0,
 				Remaining = PREFSMAN:GetPreference("SongsPerPlay"),
 				Stats = {}
 			}
@@ -119,6 +133,7 @@ local GlobalDefaults = {
 				PlayerOptions  = "ScreenGameplay",
 				PlayerOptions2 = "ScreenGameplay",
 				PlayerOptions3 = "ScreenGameplay",
+				PlayerOptions4 = "ScreenGameplay",
 			}
 			self.ContinuesRemaining = ThemePrefs.Get("NumberOfContinuesAllowed") or 0
 			self.GameMode = ThemePrefs.Get("DefaultGameMode") or "ITG"
@@ -448,6 +463,10 @@ SL = {
 		-- be loaded before this file.
 		UnlocksCache = LoadUnlocksCache(),
 	},
+	-- Bar measure display
+	ShowBeatBars = false,
+	BarMeasureAlpha = 0.50,
+	Bar4thAlpha=0.25,
 	-- Stores all active/failed downloads.
 	-- Each entry is keyed on a string UUID which maps to a table with the
 	-- following keys:
