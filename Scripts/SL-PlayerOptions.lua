@@ -396,7 +396,7 @@ local Overrides = {
 		SelectType = "SelectMultiple",
 		Values = function()
 			if SL.Global.GameMode == "FA+" then
-				return { "ShowEXScore" }
+				return { "ShowEXScore", "SmallerWhite" }
 			end
 			return { "ShowFaPlusWindow", "ShowEXScore", "ShowFaPlusPane", "SmallerWhite" }
 		end,
@@ -404,7 +404,7 @@ local Overrides = {
 			local mods = SL[ToEnumShortString(pn)].ActiveModifiers
 			if SL.Global.GameMode == "FA+" then
 				list[1] = mods.ShowEXScore or false
-				list[4] = false
+				list[2] = mods.SmallerWhite or false
 				return list
 			end
 
@@ -418,11 +418,11 @@ local Overrides = {
 			local sl_pn = SL[ToEnumShortString(pn)]
 			local mods = sl_pn.ActiveModifiers
 			if SL.Global.GameMode == "FA+" then
-				 -- always disable in FA+ mode since it's handled engine side.
+				-- always disable in FA+ mode since it's handled engine side.
 				mods.ShowFaPlusWindow = false
 				mods.ShowEXScore = list[1]
 				-- mods.ShowFaPlusPane = list[3]
-				mods.SmallerWhite = false
+				mods.SmallerWhite = list[2]
 				return
 			end
 			mods.ShowFaPlusWindow = list[1]
@@ -771,9 +771,9 @@ local Overrides = {
 		Choices = { 0.25, 0.5, 1, 1.5, 2, 2.5, 3 },
 	},
 	-------------------------------------------------------------------------
-	Experimental = {
+	ExtraAesthetics = {
 		SelectType = "SelectMultiple",
-		Choices = { "FAPlusGradual", "JudgmentBack" },
+		Values = { "JudgmentBack", "ErrorMSDisplay" }
 	},
 	-------------------------------------------------------------------------
 	ScreenAfterPlayerOptions = {

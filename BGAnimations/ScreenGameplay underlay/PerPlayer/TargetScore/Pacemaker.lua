@@ -3,7 +3,7 @@ local pn = ToEnumShortString(player)
 local mods = SL[pn].ActiveModifiers
 
 local pacemaker = Def.BitmapText{
-	Font="Common Bold",
+	Font=ThemePrefs.Get("ThemeFont") .. " Bold",
 	JudgmentMessageCommand=function(self)
 		self:queuecommand("Update")
 	end,

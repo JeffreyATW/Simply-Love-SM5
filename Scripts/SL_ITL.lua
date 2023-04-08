@@ -199,6 +199,10 @@ ReadItlFile = function(player)
 
 					for key in ivalues(keys) do
 						local value = counts[key]
+						if key == "W0" or key == "W1" then
+							key15ms = key .. "15"
+							if counts[key15ms] ~= nil then value = counts[key15ms] end
+						end
 						if value ~= nil then		
 							total_points = total_points + value * SL.ExWeights[key]
 						end
@@ -405,8 +409,8 @@ UpdateItlExScore = function(player, hash, exscore)
 			["judgments"] = {},
 			["ex"] = 0,
 			["clearType"] = 1,
-			["points"] = "",
-			["usedCmod"] = "",
+			["points"] = 0,
+			["usedCmod"] = false,
 			["date"] = "",
 			["maxPoints"] = 0,
 			["noCmod"] = false,
