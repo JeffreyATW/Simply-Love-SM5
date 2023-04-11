@@ -99,7 +99,6 @@ if not GAMESTATE:IsCourseMode() then
 		end
 	}
 end
-f:destroy()
 
 -- Clear text files
 local f = RageFileUtil.CreateRageFile()
