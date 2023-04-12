@@ -100,4 +100,23 @@ if not GAMESTATE:IsCourseMode() then
 	}
 end
 
+-- Clear text files
+local f = RageFileUtil.CreateRageFile()
+if f:Open("Save/Out/SongInfoUploadMultiline.txt", 2) then
+	--local mods = GAMESTATE:GetPlayerState(0):GetPlayerOptionsString(2)
+	f:Write("")
+else
+	-- do nothing
+end
+f:destroy()
+f = RageFileUtil.CreateRageFile()
+if f:Open("Save/Out/SongInfoUpload.txt", 2) then
+	--local mods = GAMESTATE:GetPlayerState(0):GetPlayerOptionsString(2)
+	f:Write("")
+else
+	-- do nothing
+end
+f:destroy()
+--------------------------------------------------------------------------------------
+
 return t
