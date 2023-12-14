@@ -1,79 +1,106 @@
--- the MusicWheelItem for CourseMode contains the basic colored Quads
--- use that as a common base, and add in a Sprite for "Has Edit"
-local af = LoadActor("../MusicWheelItem Course NormalPart.lua")
+local sBannerPath = THEME:GetPathG("Common", "fallback jacket");
+local sJacketPath = THEME:GetPathG("Common", "fallback jacket");
+local bAllowJackets = true
+local song;
+local group;
+--main backing
 
-local stepstype = GAMESTATE:GetCurrentStyle():GetStepsType()
-
--- using a png in a Sprite ties the visual to a specific rasterized font (currently Miso),
--- but Sprites are cheaper than BitmapTexts, so we should use them where dynamic text is not needed
-af[#af+1] = Def.Sprite{
-	Texture=THEME:GetPathG("", "Has Edit (doubleres).png"),
-	InitCommand=function(self)
-		self:horizalign(left):visible(false):zoom(0.375)
-		self:x( _screen.w/(WideScale(2.15, 2.14)) - self:GetWidth()*self:GetZoom() - 8 )
-
-		if DarkUI() then self:diffuse(0,0,0,1) end
-	end,
-	SetCommand=function(self, params)
-		self:visible(params.Song and params.Song:HasEdits(stepstype) or false)
-	end
-}
-
-for player in ivalues(PlayerNumber) do
-	af[#af+1] = LoadActor("GetLamp.lua", player)..{}
-
-	-- Add ITL EX scores to the song wheel as well.
-	-- It will be centered to the item if only one player is enabled, and stacked otherwise.
-	af[#af+1] = Def.BitmapText{
-		Font="Wendy/_wendy monospace numbers",
-		Text="",
-		InitCommand=function(self)
-			self:visible(false)
-			self:zoom(0.2)
-			self:x( _screen.w/(WideScale(2.15, 2.14)) - self:GetWidth()*self:GetZoom() - 40 )
-			self:diffuse(SL.JudgmentColors["FA+"][1])
-		end,
-		PlayerJoinedMessageCommand=function(self)
-			self:visible(GAMESTATE:IsPlayerEnabled(player))
-		end,
-		PlayerUnjoinedMessageCommand=function(self)
-			self:visible(GAMESTATE:IsPlayerEnabled(player))
-		end,
-		SetCommand=function(self, params)
-			-- Only display EX score if a profile is found for an enabled player.
-			if not GAMESTATE:IsPlayerEnabled(player) or not PROFILEMAN:IsPersistentProfile(player) then
-				self:visible(false)
-				return
-			end
-
-			if GAMESTATE:GetNumSidesJoined() == 2 then
-				if player == PLAYER_1 then
-					self:y(-11)
+local t = Def.ActorFrame {
+	-- Fallback banner in case one isn't available.
+	-- Def.Sprite {
+		-- Texture=THEME:GetPathG("Common", "fallback jacket"),
+		-- InitCommand=cmd(x,120;scaletoclipped,60,60;zoom,9;croptop,0.435;cropbottom,0.435;fadeleft,1;diffusealpha,0.35);
+	-- },
+	Def.Sprite {
+		Name="BannerBG";
+		InitCommand=cmd(x,120;scaletoclipped,60,60;zoom,9;croptop,0.435;cropbottom,0.435;fadeleft,1;diffusealpha,0.35);
+		BackgroundCommand=cmd(x,120;scaletoclipped,60,60;zoom,9;croptop,0.435;cropbottom,0.435;fadeleft,1;diffusealpha,0.35);
+		BannerCommand=cmd(x,120;scaletoclipped,60,60;zoom,9;croptop,0.435;cropbottom,0.435;fadeleft,1;diffusealpha,0.35);
+		JacketCommand=cmd(x,120;scaletoclipped,60,60;zoom,9;croptop,0.435;cropbottom,0.435;fadeleft,1;diffusealpha,0.35);
+		SetMessageCommand=function(self,params)
+			local Song = params.Song;
+			local Course = params.Course;
+			if Song then
+				if ( Song:GetJacketPath() ~=  nil ) and ( bAllowJackets ) then
+					self:visible(true):Load( Song:GetJacketPath() );
+					self:playcommand("Jacket");
+				elseif ( Song:GetBackgroundPath() ~= nil ) then
+					self:visible(true):LoadFromCached("background",Song:GetBackgroundPath())
+					-- self:visible(true):Load( Song:GetBackgroundPath() );
+					self:playcommand("Background");
+				elseif ( Song:GetBannerPath() ~= nil ) and ( bAllowJackets ) then
+					self:visible(true):LoadFromCached("banner", Song:GetBannerPath() );
+					self:playcommand("Banner");
 				else
-					self:y(4)
+				  self:visible(false)
+				end;
+			elseif Course then
+				if ( Course:GetBackgroundPath() ~= nil ) and ( bAllowJackets ) then
+					self:visible(true):Load( Course:GetBackgroundPath() );
+					self:playcommand("Jacket");
+				elseif ( Course:GetBannerPath() ~= nil ) then
+					self:visible(true):Load( Course:GetBannerPath() );
+					self:playcommand("Banner");
+				else
+					self:visible(false)
 				end
 			else
-				self:y(-4)
-			end
-			local pn = ToEnumShortString(player)
-			if params.Song ~= nil then
-				local song = params.Song
-				local song_dir = song:GetSongDir()
-				if song_dir ~= nil and #song_dir ~= 0 then
-					if SL[pn].ITLData["pathMap"][song_dir] ~= nil then
-						local hash = SL[pn].ITLData["pathMap"][song_dir]
-						if SL[pn].ITLData["hashMap"][hash] ~= nil then
-							local ex = SL[pn].ITLData["hashMap"][hash]["ex"] / 100
-							self:settext(("%.2f"):format(ex))
-							self:visible(true)
-							return
-						end
-					end
-				end
-			end
-			self:visible(false)
-		end,
-	}
-end
+				self:visible(false)
+			end;
+		end;
+	};
 
-return af
+
+	LoadActor(THEME:GetPathG("MusicWheelItem", "ModeItem")) .. {};
+
+	LoadActor("diff1") .. {
+	OnCommand=cmd(x,-211;y,46;zoom,0.5);
+	};
+	
+	LoadActor("grade1") .. {
+	OnCommand=cmd(x,-168;zoom,0.71;);
+	};
+
+--banner
+	Def.Sprite {
+		Name="Banner";
+		InitCommand=cmd(scaletoclipped,60,60;x,-210);
+		BackgroundCommand=cmd(scaletoclipped,60,60);
+		BannerCommand=cmd(scaletoclipped,60,60);
+		JacketCommand=cmd(scaletoclipped,60,60);
+		SetMessageCommand=function(self,params)
+			local Song = params.Song;
+			local Course = params.Course;
+			if Song then
+				if ( Song:GetJacketPath() ~=  nil ) and ( bAllowJackets ) then
+					self:Load( Song:GetJacketPath() );
+					self:playcommand("Jacket");
+				elseif ( Song:GetBackgroundPath() ~= nil ) then
+					self:Load( Song:GetBackgroundPath() );
+					self:playcommand("Background");
+				elseif ( Song:GetBannerPath() ~= nil ) and ( bAllowJackets ) then
+					self:Load( Song:GetBannerPath() );
+					self:playcommand("Banner");
+				else
+				  self:Load( bAllowJackets and sBannerPath or sJacketPath );
+				  self:playcommand( bAllowJackets and "Jacket" or "Banner" );
+				end;
+			elseif Course then
+				if ( Course:GetBackgroundPath() ~= nil ) and ( bAllowJackets ) then
+					self:Load( Course:GetBackgroundPath() );
+					self:playcommand("Jacket");
+				elseif ( Course:GetBannerPath() ~= nil ) then
+					self:Load( Course:GetBannerPath() );
+					self:playcommand("Banner");
+				else
+					self:Load( sJacketPath );
+					self:playcommand( bAllowJackets and "Jacket" or "Banner" );
+				end
+			else
+				self:Load( bAllowJackets and sJacketPath or sBannerPath );
+				self:playcommand( bAllowJackets and "Jacket" or "Banner" );
+			end;
+		end;
+	};
+};
+return t;
