@@ -593,7 +593,7 @@ t[#t+1]=LoadActor("songtitlebg")..{
 	};
 
 t[#t+1] = Def.BitmapText {
-		Font = "Common Normal",
+		Font = "_@fot-newrodin pro db 20px",
 		InitCommand=cmd(horizalign,left;x,SCREEN_CENTER_X-320;y,SCREEN_CENTER_Y-141;zoom,0.5;shadowlengthy,2;diffusealpha,0.5;),
 		OnCommand=function(self)
 			self:settext("Song Length:            BPM:")
