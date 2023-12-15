@@ -7,15 +7,18 @@ local pn = ToEnumShortString(player)
 
 -- Height and width of the density graph.
 local height = 64
-local width = IsUsingWideScreen() and 286 or 276
+local width = IsUsingWideScreen() and 303 or 293
+
+local nxXOffset = -264
+local nxYOffset = 126
 
 local af = Def.ActorFrame{
 	InitCommand=function(self)
 		self:visible( GAMESTATE:IsHumanPlayer(player) )
-		self:xy(_screen.cx-182, _screen.cy+23)
+		self:xy(_screen.cx-182+nxXOffset, _screen.cy+23+nxYOffset)
 
 		if player == PLAYER_2 then
-			self:addy(height+24)
+			self:addx(width+16)
 		end
 
 		if IsUsingWideScreen() then
@@ -114,6 +117,8 @@ af2[#af2+1] = NPS_Histogram(player, width, height)..{
 -- We do this in parent actorframe because we want to "stall" before we parse.
 af2[#af2]["CurrentSteps"..pn.."ChangedMessageCommand"] = nil
 
+local nxPeakXOffset = -10
+
 -- The Peak NPS text
 af2[#af2+1] = LoadFont("Common Normal")..{
 	Name="NPS",
@@ -121,9 +126,9 @@ af2[#af2+1] = LoadFont("Common Normal")..{
 	InitCommand=function(self)
 		self:horizalign(left):zoom(0.8)
 		if player == PLAYER_1 then
-			self:addx(60):addy(-41)
+			self:addx(60+nxPeakXOffset):addy(-41)
 		else
-			self:addx(-136):addy(-41)
+			self:addx(-136+nxPeakXOffset):addy(-41)
 		end
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
@@ -191,11 +196,8 @@ af2[#af2+1] = Def.ActorFrame{
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
 	InitCommand=function(self)
-		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(0)
-		else
-			self:y(88 * (player == PLAYER_1 and 1 or -1))
-		end
+		self:x(width+16);
+		self:y(0);
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 	end,
 	PlayerJoinedMessageCommand=function(self, params)

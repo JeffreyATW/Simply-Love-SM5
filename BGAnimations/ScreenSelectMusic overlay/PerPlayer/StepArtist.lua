@@ -4,6 +4,11 @@ local p = PlayerNumber:Reverse()[player]
 
 local text_table, marquee_index
 
+local nxXOffset = -272;
+local nxYOffset = 66;
+
+local p2XOffset = 335;
+
 return Def.ActorFrame{
 	Name="StepArtistAF_" .. pn,
 
@@ -23,13 +28,13 @@ return Def.ActorFrame{
 	-- animation is left here as a reminder to a future me to maybe look into it.
 	PlayerUnjoinedMessageCommand=function(self, params)
 		if params.Player == player then
-			self:ease(0.5, 275):addy(scale(p,0,1,1,-1) * 30):diffusealpha(0)
+			self:ease(0.5, 275):addy(30):diffusealpha(0)
 		end
 	end,
 
 	-- depending on the value of pn, this will either become
 	-- an AppearP1Command or an AppearP2Command when the screen initializes
-	["Appear"..pn.."Command"]=function(self) self:visible(true):ease(0.5, 275):addy(scale(p,0,1,-1,1) * 30) end,
+	["Appear"..pn.."Command"]=function(self) self:visible(true):ease(0.5, 275):addy(30) end,
 
 	InitCommand=function(self)
 		self:visible( false ):halign( p )
@@ -38,20 +43,20 @@ return Def.ActorFrame{
 
 			if GAMESTATE:IsCourseMode() then
 				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
-				self:y(_screen.cy + 32)
+				self:y(_screen.cy + nxYOffset + 32)
 			else
 				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
-				self:y(_screen.cy + 12)
+				self:y(_screen.cy + nxYOffset + 12)
 			end
 
 		elseif player == PLAYER_2 then
 
 			if GAMESTATE:IsCourseMode() then
-				self:x( _screen.cx - 210)
-				self:y(_screen.cy + 85)
+				self:x( _screen.cx - 210 + p2XOffset)
+				self:y(_screen.cy + nxYOffset + 32)
 			else
-				self:x( _screen.cx - 244)
-				self:y(_screen.cy + 40)
+				self:x( _screen.cx - 244 + p2XOffset)
+				self:y(_screen.cy + nxYOffset + 12)
 			end
 		end
 
@@ -63,7 +68,7 @@ return Def.ActorFrame{
 	-- colored background quad
 	Def.Quad{
 		Name="BackgroundQuad",
-		InitCommand=function(self) self:zoomto(175, _screen.h/28):x(113):diffuse(color("#000000")) end,
+		InitCommand=function(self) self:zoomto(175, _screen.h/28):x(113+nxXOffset):diffuse(color("#000000")) end,
 		ResetCommand=function(self)
 			local StepsOrTrail = GAMESTATE:IsCourseMode() and GAMESTATE:GetCurrentTrail(player) or GAMESTATE:GetCurrentSteps(player)
 
@@ -80,7 +85,7 @@ return Def.ActorFrame{
 	LoadFont("Common Normal")..{
 		Text=GAMESTATE:IsCourseMode() and Screen.String("SongNumber"):format(1) or Screen.String("STEPS"),
 		InitCommand=function(self)
-			self:diffuse(0,0,0,1):horizalign(left):x(30):maxwidth(40):zoom(0.8)
+			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):maxwidth(40):zoom(0.8)
 		end,
 		UpdateTrailTextMessageCommand=function(self, params)
 			self:settext( THEME:GetString("ScreenSelectCourse", "SongNumber"):format(params.index) )
@@ -93,9 +98,9 @@ return Def.ActorFrame{
 			self:diffuse(color("#1e282f")):horizalign(left):zoom(0.8)
 
 			if GAMESTATE:IsCourseMode() then
-				self:x(60):maxwidth(138)
+				self:x(60+nxXOffset):maxwidth(138)
 			else
-				self:x(75):maxwidth(124):diffuse(color("#000000"))
+				self:x(75+nxXOffset):maxwidth(124):diffuse(color("#000000"))
 			end
 		end,
 		ResetCommand=function(self)
