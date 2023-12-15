@@ -787,14 +787,14 @@ t[#t+1] = LoadActor("DefaultDifficulty.lua")..{
 };
 
 	
--- if GAMESTATE:IsPlayerEnabled(PLAYER_1) then
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Beginner');
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Easy');
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Medium');
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Hard');
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Challenge');
--- t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Edit');
--- end;
+if GAMESTATE:IsPlayerEnabled(PLAYER_1) then
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Beginner');
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Easy');
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Medium');
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Hard');
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Challenge');
+t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Edit');
+end;
 
 end;
 
