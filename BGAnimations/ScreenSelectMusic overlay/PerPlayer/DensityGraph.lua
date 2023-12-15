@@ -8,7 +8,10 @@ local pn = ToEnumShortString(player)
 
 -- Height and width of the density graph.
 local height = 64
-local width = IsUsingWideScreen() and 286 or 276
+local width = IsUsingWideScreen() and 303 or 293
+
+local nxXOffset = -264
+local nxYOffset = 126
 
 local marquee_index
 local text_table = {}
@@ -17,15 +20,10 @@ local leaving_screen = false
 local af = Def.ActorFrame{
 	InitCommand=function(self)
 		self:visible( GAMESTATE:IsHumanPlayer(player) )
-		self:x(_screen.cx-182)
-		if #GAMESTATE:GetHumanPlayers() == 1 then 
-			self:y(_screen.cy+62)
-		else
-			self:y(_screen.cy+23)
-		end
+		self:xy(_screen.cx-182+nxXOffset, _screen.cy+23+nxYOffset)
 
 		if player == PLAYER_2 then
-			self:addy(height+24)
+			self:addx(width+16)
 		end
 
 		if IsUsingWideScreen() then
@@ -150,30 +148,18 @@ af2[#af2+1] = NPS_Histogram(player, width, height)..{
 -- We do this in parent actorframe because we want to "stall" before we parse.
 af2[#af2]["CurrentSteps"..pn.."ChangedMessageCommand"] = nil
 
+local nxPeakXOffset = -10
+
 -- The Peak NPS text
 af2[#af2+1] = LoadFont("Common Normal")..{
 	Name="NPS",
 	Text="",
 	InitCommand=function(self)
-		self:zoom(0.8)
-		if #GAMESTATE:GetHumanPlayers() == 1 then 
-			self:settext("Peak NPS: \nPeak eBPM: ")
-			self:horizalign(left)
-			self:y(-50)
-			if player == PLAYER_1 then
-				self:x(60)
-			else					
-				self:x(-136)
-			end
+		self:horizalign(left):zoom(0.8)
+		if player == PLAYER_1 then
+			self:addx(60+nxPeakXOffset):addy(-41)
 		else
-			self:horizalign("right")
-			self:y(-40)
-			if player == PLAYER_1 then 
-				self:x(140)
-			else
-				self:x(-55)
-			end
-			self:settext("Peak NPS: ")		
+			self:addx(-136+nxPeakXOffset):addy(-41)
 		end
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
@@ -298,15 +284,8 @@ af2[#af2+1] = Def.ActorFrame{
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
 	InitCommand=function(self)
-		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(0)
-		else
-			if player == PLAYER_1 then
-				self:y(38 + 24)
-			else
-				self:y(-38 - 80)
-			end
-		end
+		self:x(width+16);
+		self:y(0);
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
