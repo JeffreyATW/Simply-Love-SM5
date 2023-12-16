@@ -42,24 +42,24 @@ end
 -- Simply Love is only concerned with "AfterSetCommand"
 -- because the song Artist does not appear in each MusicWheelItem
 
-TextBannerAfterSet = function(self)
-	-- acquire handles to two of the BitmapText children of this TextBanner ActorFrame
-	-- we'll use them to position each song's Title and Subtitle as they appear in the MusicWheel
-	local Title = self:GetChild("Title")
-	local Subtitle = self:GetChild("Subtitle")
+-- TextBannerAfterSet = function(self)
+-- 	-- acquire handles to two of the BitmapText children of this TextBanner ActorFrame
+-- 	-- we'll use them to position each song's Title and Subtitle as they appear in the MusicWheel
+-- 	local Title = self:GetChild("Title")
+-- 	local Subtitle = self:GetChild("Subtitle")
 
-	-- assume the song's Subtitle is an empty string by default and position the Title
-	-- in the vertical middle of the MusicWheelItem
-	Title:y(0)
+-- 	-- assume the song's Subtitle is an empty string by default and position the Title
+-- 	-- in the vertical middle of the MusicWheelItem
+-- 	Title:y(0)
 
-	-- if the Subtitle isn't an empty string
-	if Subtitle:GetText() ~= "" then
-		-- offset the Title's y() by -6 pixels
-		Title:y(-6)
-		-- and offset the Subtitle's y() by 6 pixels
-		Subtitle:y(6)
-	end
-end
+-- 	-- if the Subtitle isn't an empty string
+-- 	if Subtitle:GetText() ~= "" then
+-- 		-- offset the Title's y() by -6 pixels
+-- 		Title:y(-6)
+-- 		-- and offset the Subtitle's y() by 6 pixels
+-- 		Subtitle:y(6)
+-- 	end
+-- end
 
 ----------------------------------------------------------------------------------------
 -- functions used by both SSM and SSMCasual
