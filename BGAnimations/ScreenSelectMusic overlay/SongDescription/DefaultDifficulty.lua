@@ -110,7 +110,7 @@ for idx,diff in pairs(DiffList) do
 			UnSelectCommand=cmd(stoptweening;decelerate,0.2;shadowlengthy,2;diffuse,CustomDifficultyToColor( sDifficulty ));
 		};
 		
-		LoadFont("_sf rounded pro 28px") .. { --���״y�z
+		LoadFont("_@fot-newrodin pro db 20px") .. { --���״y�z
 			Name="Meter";
 			Text=THEME:GetString("CustomDifficulty",ToEnumShortString(diff));
 			ShowCommand=cmd(stoptweening;linear,0.1;;diffuse,color("1,1,1,1");strokecolor, color( "0,0,0,0" );zoomx,0.40);
@@ -120,7 +120,7 @@ for idx,diff in pairs(DiffList) do
 		};
 
 		
-		LoadFont("_sf rounded pro 28px") .. { --�Ʀr
+		LoadFont("_@fot-newrodin pro db 20px") .. { --�Ʀr
 			Name="Meter";
 			Text="0";
 			ShowCommand=cmd(stoptweening;linear,0.1;diffuse,color( "1,1,1,1" );strokecolor, color( "0,0,0,1" ));

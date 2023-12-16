@@ -20,9 +20,6 @@ local af = Def.ActorFrame{
 local nxYOffset = -155
 
 local t = Def.ActorFrame{
-	OnCommand=function(self)
-		self:xy(-95,nxYOffset):zoom( 0.79 )
-	end
 };
 
 function TopRecord(pn) --�^�ǳ̰��������Ӭ���
@@ -167,143 +164,7 @@ local function DrawDifList(pn,diff)
 		CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
 		CurrentTrailP2ChangedMessageCommand=cmd(queuecommand,"Set");
 		CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
---難度別最高分數資訊
-		Def.RollingNumbers {
-			File = THEME:GetPathF("_sf rounded pro", "20px");
-			InitCommand=cmd(shadowlengthy,2;zoom,0.65;strokecolor,Color("Outline"));
-			BeginCommand=cmd(playcommand,"Set");
-			OffCommand=cmd(linear,0.25;diffusealpha,0;);
-			SetCommand=function(self)
-				local st=GAMESTATE:GetCurrentStyle():GetStepsType();
-				local song=GAMESTATE:GetCurrentSong();
-				local course = GAMESTATE:GetCurrentCourse();
-
-				if song then
-					GetDifListX(self,pn,270,0);
-					--self:y(GetFlexDifListY(diff, st, song));
-					self:y(GetDifListY(diff)+2);
-					if song:HasStepsTypeAndDifficulty(st,diff) then
-						local steps = song:GetOneSteps( st, diff );
-						if PROFILEMAN:IsPersistentProfile(pn) then
-							-- player profile
-							profile = PROFILEMAN:GetProfile(pn);
-						else
-							-- machine profile
-							profile = PROFILEMAN:GetMachineProfile();
-						end;
-						scorelist = profile:GetHighScoreList(song,steps);
-						assert(scorelist);
-						local scores = scorelist:GetHighScores();
-						assert(scores);
-						local topscore=0;
-						if scores[1] then
-							topscore = scores[1]:GetScore();
-						end;
-						assert(topscore);
-						--topscore=10;
-						-- self:diffuse(CustomDifficultyToLightColor(diff));
-						-- self:strokecolor(CustomDifficultyToDarkColor(diff));
-						self:diffuse(color("1,1,1,1"));
-						self:strokecolor(color("0.2,0.2,0.2,1"));
-						self:diffusealpha(1);
-						-- if pn==PLAYER_1 then
-							-- self:settextf("%09d   %s",topscore,THEME:GetString("CustomDifficulty",ToEnumShortString(diff)));
-						-- else
-							-- self:settextf("%s   %09d",THEME:GetString("CustomDifficulty",ToEnumShortString(diff)),topscore);
-						-- end;
-						if pn==PLAYER_1 and topscore ~= 0  then
-							self:Load("RollingNumbersSongData");
-							self:targetnumber(topscore);
-						elseif pn==PLAYER_2 and topscore ~= 0  then
-							self:Load("RollingNumbersSongData");
-							self:targetnumber(topscore);
-						else 
-							self:settextf("");
-						end;
-						
-						
-					else
-						self:settext("");
-					end;
-				else
-					self:settext("");			
-				end;
-			end;
-			
-			
-		};
 		
-    Def.ActorFrame{
-      InitCommand=function(s) s:x(90) end,
-      LoadActor(THEME:GetPathG("StageIn","Spin FullCombo"))..{
-        InitCommand=function(s) s:shadowlength(1):zoom(0):draworder(5):x(24):diffusealpha(0.8) end,
-		OffCommand=cmd(linear,0.25;diffusealpha,0;);
-        SetCommand=function(self)
-          local st=GAMESTATE:GetCurrentStyle():GetStepsType();
-          local song=GAMESTATE:GetCurrentSong();
-          local course = GAMESTATE:GetCurrentCourse();
-          if song then
-		  	GetDifListX(self,pn,285,0);
-			self:y(GetDifListY(diff)+0.5);
-            if song:HasStepsTypeAndDifficulty(st,diff) then
-              local steps = song:GetOneSteps( st, diff );
-              if PROFILEMAN:IsPersistentProfile(pn) then
-                profile = PROFILEMAN:GetProfile(pn);
-              else
-                profile = PROFILEMAN:GetMachineProfile();
-              end;
-              scorelist = profile:GetHighScoreList(song,steps);
-              assert(scorelist);
-              local scores = scorelist:GetHighScores();
-              assert(scores);
-              local topscore;
-              if scores[1] then
-                topscore = scores[1];
-         	assert(topscore);
-						local misses = topscore:GetTapNoteScore("TapNoteScore_Miss")+topscore:GetTapNoteScore("TapNoteScore_CheckpointMiss")
-												+topscore:GetTapNoteScore("TapNoteScore_HitMine")+topscore:GetHoldNoteScore("HoldNoteScore_LetGo")
-						local boos = topscore:GetTapNoteScore("TapNoteScore_W5")
-						local goods = topscore:GetTapNoteScore("TapNoteScore_W4")
-						local greats = topscore:GetTapNoteScore("TapNoteScore_W3")
-						local perfects = topscore:GetTapNoteScore("TapNoteScore_W2")
-						local marvelous = topscore:GetTapNoteScore("TapNoteScore_W1")
-						local hasUsedLittle = string.find(topscore:GetModifiers(),"Little")
-						if (misses+boos) == 0 and scores[1]:GetScore() > 0 and (marvelous+perfects)>0 and (not hasUsedLittle) and topscore:GetGrade()~="Grade_Failed" then
-							if (goods+greats+perfects) == 0 then
-								self:diffuse(GameColor.Judgment["JudgmentLine_W1"]);
-								self:glowblink();
-								self:effectperiod(0.20);
-
-							elseif goods+greats == 0 then
-								self:diffuse(GameColor.Judgment["JudgmentLine_W2"]);
-								--self:glowshift();
-
-							elseif (misses+boos+goods) == 0 then
-								self:diffuse(GameColor.Judgment["JudgmentLine_W3"]);
-								self:stopeffect();
-
-							elseif (misses+boos) == 0 then
-								self:diffuse(GameColor.Judgment["JudgmentLine_W4"]);
-								self:stopeffect();
-
-                  end;
-                  self:visible(true)
-                  self:zoom(0.15);
-                else
-                  self:visible(false)
-                end;
-              else
-                self:visible(false)
-              end;
-            else
-              self:visible(false)
-            end;
-          else
-            self:visible(false)
-          end;
-        end
-      };
-	  };
 ---Grade
 	
 			Def.Quad{
@@ -463,7 +324,8 @@ local function DrawDifListPlayershadowp1(pn,diff)
 				local st=GAMESTATE:GetCurrentStyle():GetStepsType();
 				local song=GAMESTATE:GetCurrentSong();
 				if song then
-					if song:HasStepsTypeAndDifficulty(st,diff) and diff==GAMESTATE:GetCurrentSteps(pn):GetDifficulty() then
+					local currentSteps = GAMESTATE:GetCurrentSteps(pn)
+					if currentSteps and song:HasStepsTypeAndDifficulty(st,diff) and diff==currentSteps:GetDifficulty() then
 						self:diffusealpha(1);
 						self:y(GetDifListY(diff));
 					else
@@ -622,7 +484,7 @@ t[#t+1] = Def.BitmapText {
 			CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
 			CurrentCourseChangedMessageCommand=cmd(queuecommand,"Set");
 		};
-		
+
 t[#t+1] = StandardDecorationFromFileOptional("ShockArrowDisplayP1","ShockArrowDisplayP1") .. {
 	InitCommand = cmd(x,SCREEN_CENTER_X-122+1000;draworder,5;y,SCREEN_CENTER_Y-171;zoom,0.6;);
 	OffCommand = cmd(linear,0.25;diffusealpha,0;);
@@ -907,8 +769,13 @@ end
 
 -- elements we need two of (one for each player) that draw underneath the StepsDisplayList
 -- this includes the stepartist boxes, the density graph, and the cursors.
-t[#t+1] = LoadActor("../PerPlayer/default.lua");
+t[#t+1] = LoadActor("./PerPlayer/default.lua");
 
-af[#af+1] = t;
+af[#af+1] = Def.ActorFrame {
+	InitCommand=cmd(zoom,.73;addy,-145;draworder,-5;wag;effectmagnitude,-1,-1,-0.5;effecttiming,7,0,7,0;addx,-490;fov,90;rotationy,-5;diffusealpha,0;addz,100;);
+	OnCommand=cmd(decelerate,0.8;addx,400;diffusealpha,1;addz,-100;bob;effectmagnitude,0,4,0;effecttiming,4,0,4,0;);
+	OffCommand=cmd(decelerate,0.5;addx,-400;diffusealpha,0;addz,100;);
+	t;
+};
 
 return af
