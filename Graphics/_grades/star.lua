@@ -51,6 +51,9 @@ t[#t+1] = LoadActor("./assets/star.png")..{
 }
 
 t[#t+1] = LoadActor("./assets/affluent.png")..{
+	InitCommand=function(self)
+		self:diffusealpha(0)
+	end,
 	OnCommand=function(self)
 		self:y(10)
 		self:zoom(1.2)

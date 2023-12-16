@@ -145,7 +145,7 @@ local function GetDifListX(self,pn,offset,fade)
 		end;
 	else
 		--self:horizalign(right);
-		self:x(SCREEN_CENTER_X+150+offset+150);
+		self:x(SCREEN_CENTER_X+150-offset+150);
 		if fade>0 then
 			self:fadeleft(fade);
 		end;
@@ -167,8 +167,8 @@ local function DrawDifList(pn,diff)
 		
 ---Grade
 	
-			Def.Quad{
-			InitCommand=cmd(shadowlengthy,2;zoom,0.30;cropright,0.01;);
+			Def.ActorFrame{
+			InitCommand=cmd(shadowlengthy,2;zoom,0.13;cropright,0.01;);
 			BeginCommand=cmd(playcommand,"Set");
 			OffCommand=cmd(linear,0.25;diffusealpha,0;);
 			SetCommand=function(self)
@@ -178,7 +178,7 @@ local function DrawDifList(pn,diff)
 				song=GAMESTATE:GetCurrentSong();
 				
 				if song then
-					GetDifListX(self,pn,208,0);
+					GetDifListX(self,pn,230,0);
 					--self:y(GetFlexDifListY(diff, st, song));
 					self:y(GetDifListY(diff)+1);
 					if song:HasStepsTypeAndDifficulty(st,diff) then
@@ -203,17 +203,20 @@ local function DrawDifList(pn,diff)
 								assert(topgrade);
 								if scores[1]:GetScore()>1  then
 									if scores[1]:GetScore()==1000000 and scores[1]:GetGrade() =="Grade_Tier07" then --AutoPlayHack
-										self:LoadBackground(THEME:GetPathG("myMusicWheel","Tier01"));
+										self:RemoveAllChildren();
+										self:AddChildFromPath(THEME:GetPathG("myMusicWheel","Tier01"));
 										self:diffusealpha(1);
 										break;
 									else --Normal
 										if ToEnumShortString(curgrade) ~= "Failed" then --current Rank is not Failed
-											self:LoadBackground(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
+											self:RemoveAllChildren();
+											self:AddChildFromPath(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
 											self:diffusealpha(1);
 											break;
 										else --current Rank is Failed
 											if i == temp then
-												self:LoadBackground(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
+												self:RemoveAllChildren();
+												self:AddChildFromPath(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
 												self:diffusealpha(1);
 												break;
 											end;
@@ -233,78 +236,7 @@ local function DrawDifList(pn,diff)
 					self:diffusealpha(0);
 				end;
 			end;
-		};
-
-			Def.Quad{
-				InitCommand=cmd(shadowlengthy,2;zoom,0.30;cropright,0.01;);
-				BeginCommand=cmd(playcommand,"Set");
-				OffCommand=cmd(linear,0.25;diffusealpha,0;);
-				SetCommand=function(self)
-					local st=GAMESTATE:GetCurrentStyle():GetStepsType();
-					
-					local song=nil;
-					song=GAMESTATE:GetCurrentSong();
-					
-					if song then
-						GetDifListX(self,pn,208,0);
-						--self:y(GetFlexDifListY(diff, st, song));
-						self:y(GetDifListY(diff)+1);
-						if song:HasStepsTypeAndDifficulty(st,diff) then
-							local steps = song:GetOneSteps( st, diff );
-							if PROFILEMAN:IsPersistentProfile(pn) then
-								-- player profile
-								profile = PROFILEMAN:GetProfile(pn);
-							else
-								-- machine profile
-								profile = PROFILEMAN:GetMachineProfile();
-							end;
-							scorelist = profile:GetHighScoreList(song,steps);
-							assert(scorelist);
-							local scores = scorelist:GetHighScores();
-							assert(scores);
-							local topgrade;
-							local temp=#scores;
-							if scores[1] then
-								for i=1,temp do 
-									topgrade = scores[1]:GetGrade();
-									curgrade = scores[i]:GetGrade();
-									assert(topgrade);
-									if scores[1]:GetScore()>1  then
-										if scores[1]:GetScore()==1000000 and scores[1]:GetGrade() =="Grade_Tier07" then --AutoPlayHack
-											self:LoadBackground(THEME:GetPathG("myMusicWheel","Tier01"));
-											self:diffusealpha(1);
-											break;
-										else --Normal
-											if ToEnumShortString(curgrade) ~= "Failed" then --current Rank is not Failed
-												self:LoadBackground(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
-												self:diffusealpha(1);
-												break;
-											else --current Rank is Failed
-												if i == temp then
-													self:LoadBackground(THEME:GetPathG("myMusicWheel",ToEnumShortString(curgrade)));
-													self:diffusealpha(1);
-													break;
-												end;
-											end;
-										end;
-									else
-										self:diffusealpha(0);
-									end;
-								end;
-							else
-								self:diffusealpha(0);
-							end;
-						else
-							self:diffusealpha(0);
-						end;
-					else
-						self:diffusealpha(0);
-					end;
-				end;
-			
-		};
-
-		
+		};		
 	};
 	return t;
 end;
@@ -458,7 +390,7 @@ t[#t+1] = Def.BitmapText {
 		Font = "_@fot-newrodin pro db 20px",
 		InitCommand=cmd(horizalign,left;x,SCREEN_CENTER_X-320;y,SCREEN_CENTER_Y-141;zoom,0.5;shadowlengthy,2;diffusealpha,0.5;),
 		OnCommand=function(self)
-			self:settext("Song Length:            BPM:")
+			self:settext("Song Length:            BPM:                                       P1    P2")
 			end;	
 			BeginCommand=cmd(playcommand,"Set");
 			OffCommand=cmd(decelerate,0.25;diffusealpha,0;);
@@ -657,6 +589,16 @@ t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Hard');
 t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Challenge');
 t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Edit');
 end;
+
+
+if GAMESTATE:IsPlayerEnabled(PLAYER_2) then
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Beginner');
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Easy');
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Medium');
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Hard');
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Challenge');
+	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Edit');
+	end;
 
 end;
 
