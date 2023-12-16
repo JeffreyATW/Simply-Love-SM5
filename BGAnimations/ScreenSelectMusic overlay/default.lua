@@ -28,9 +28,6 @@ local af = Def.ActorFrame{
 
 	-- number of steps, jumps, holds, etc., and high scores associated with the current stepchart
 	LoadActor("./PaneDisplay.lua"),
-
-	-- Song's Musical Artist, BPM, Duration
-	LoadActor("./SongDescription/SongDescription.lua"),
 	-- Banner Art
 	-- LoadActor("./Banner.lua"),
 
