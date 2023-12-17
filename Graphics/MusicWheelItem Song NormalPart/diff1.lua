@@ -28,7 +28,7 @@ local function setDiffBG2(self,param)
 			 local diff = self.ParamSong:GetOneSteps( st, sDiff)
       local diffname = GAMESTATE:GetCurrentSteps(PLAYER_1):GetDifficulty()
       if diff then
-  			self:diffuse(CustomDifficultyToColor(diffname));
+  			self:diffuse(DifficultyColor(diffname));
   		else
   			self:diffuse(color("1,1,1,0"))
   		end;

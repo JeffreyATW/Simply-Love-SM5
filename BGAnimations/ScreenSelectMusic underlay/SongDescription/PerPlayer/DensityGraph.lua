@@ -52,15 +52,6 @@ local af = Def.ActorFrame{
 	end,
 }
 
--- Background quad for the density graph
-af[#af+1] = Def.Quad{
-	InitCommand=function(self)
-		self:diffuse(color("#1e282f")):zoomto(width, height)
-		if ThemePrefs.Get("RainbowMode") then
-			self:diffusealpha(0.9)
-		end
-	end
-}
 
 af[#af+1] = Def.ActorFrame{
 	Name="ChartParser",
@@ -118,15 +109,16 @@ af2[#af2+1] = NPS_Histogram(player, width, height)..{
 af2[#af2]["CurrentSteps"..pn.."ChangedMessageCommand"] = nil
 
 local nxPeakXOffset = -10
+local textZoom = 0.6;
 
 -- The Peak NPS text
-af2[#af2+1] = LoadFont("Common Normal")..{
+af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 	Name="NPS",
 	Text="Peak NPS: ",
 	InitCommand=function(self)
-		self:horizalign(left):zoom(0.8)
+		self:horizalign(left):zoom(textZoom)
 		if player == PLAYER_1 then
-			self:addx(60+nxPeakXOffset):addy(-41)
+			self:addx(40+nxPeakXOffset):addy(-41)
 		else
 			self:addx(-136+nxPeakXOffset):addy(-41)
 		end
@@ -171,18 +163,16 @@ af2[#af2+1] = Def.ActorFrame{
 		end
 	},
 
-	LoadFont("Common Normal")..{
+	LoadFont("_@fot-newrodin pro db 20px")..{
 		Text="",
 		Name="BreakdownText",
 		InitCommand=function(self)
-			local textZoom = 0.8
 			self:maxwidth(width/textZoom):zoom(textZoom)
 		end,
 		HideCommand=function(self)
 			self:settext("")
 		end,
 		RedrawCommand=function(self)
-			local textZoom = 0.8
 			self:settext(GenerateBreakdownText(pn, 0))
 			local minimization_level = 1
 			while self:GetWidth() > (width/textZoom) and minimization_level < 4 do
@@ -193,17 +183,19 @@ af2[#af2+1] = Def.ActorFrame{
 	}
 }
 
+local patternInfoY = -12
+
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
 	InitCommand=function(self)
 		self:x(width+16);
-		self:y(0);
+		self:y(patternInfoY);
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(0)
+			self:y(patternInfoY)
 		else
 			self:y(88 * (player == PLAYER_1 and 1 or -1))
 		end
@@ -211,22 +203,14 @@ af2[#af2+1] = Def.ActorFrame{
 	PlayerUnjoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
 		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(0)
+			self:y(patternInfoY)
 		else
 			self:y(88 * (player == PLAYER_1 and 1 or -1))
 		end
 	end,
 	TogglePatternInfoCommand=function(self)
 		self:visible(not self:GetVisible())
-	end,
-	
-	-- Background for the additional chart info.
-	-- Only shown in 1 Player mode
-	Def.Quad{
-		InitCommand=function(self)
-			self:diffuse(color("#1e282f")):zoomto(width, height)
-		end,
-	}
+	end
 }
 
 local af3 = af2[#af2]
@@ -238,16 +222,17 @@ local layout = {
 }
 
 local colSpacing = 150
-local rowSpacing = 20
+local rowSpacing = 24
+
+local textZoom = 0.6;
 
 for i, row in ipairs(layout) do
 	for j, col in pairs(row) do
-		af3[#af3+1] = LoadFont("Common normal")..{
+		af3[#af3+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 			Text=col ~= "Total Stream" and "0" or "None (0.0%)",
 			Name=col .. "Value",
 			InitCommand=function(self)
 				local textHeight = 17
-				local textZoom = 0.8
 				self:zoom(textZoom):horizalign(right)
 				if col == "Total Stream" then
 					self:maxwidth(100)
@@ -278,12 +263,11 @@ for i, row in ipairs(layout) do
 			end
 		}
 
-		af3[#af3+1] = LoadFont("Common Normal")..{
+		af3[#af3+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 			Text=col,
 			Name=col,
 			InitCommand=function(self)
 				local textHeight = 17
-				local textZoom = 0.8
 				self:maxwidth(width/textZoom):zoom(textZoom):horizalign(left)
 				self:xy(-width/2 + 50, -height/2 + 13)
 				self:addx((j-1)*colSpacing)
