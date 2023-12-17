@@ -41,12 +41,14 @@ local GetPointsForSong = function(maxPoints, exScore)
 	return math.floor(maxPoints * percent)
 end
 
-local nxXOffset = -272;
-local nxYOffset = 66;
+local nxXOffset = -267;
+local nxYOffset = 71;
 
 local p2XOffset = 335;
 
 local textZoom = 0.6;
+
+local stepsText = GAMESTATE:IsCourseMode() and Screen.String("SongNumber"):format(1) or Screen.String("STEPS")
 
 return Def.ActorFrame{
 	Name="StepArtistAF_" .. pn,
@@ -104,46 +106,28 @@ return Def.ActorFrame{
 		end
 	end,
 
-	-- colored background quad
-	Def.Quad{
-		Name="BackgroundQuad",
-		InitCommand=function(self) self:zoomto(175, _screen.h/28):x(113+nxXOffset):diffuse(color("#000000")) end,
-		ResetCommand=function(self)
-			local StepsOrTrail = GAMESTATE:IsCourseMode() and GAMESTATE:GetCurrentTrail(player) or GAMESTATE:GetCurrentSteps(player)
-			if #GAMESTATE:GetHumanPlayers() == 1 then
-				self:zoomto(190, _screen.h/8):x(120):y(18)
-			else
-				self:zoomto(175, _screen.h/28):x(113):y(0)
-			end
-			if StepsOrTrail then
-				local difficulty = StepsOrTrail:GetDifficulty()
-				self:diffuse( DifficultyColor(difficulty) )
-				text_table = GetStepsCredit(player)
-				if #GAMESTATE:GetHumanPlayers() == 1 then 
-					if #text_table == 3 then
-						self:fadebottom(0)
-					elseif #text_table == 2 then
-						self:fadebottom(0.5)
-					elseif #text_table == 1 then
-						self:fadebottom(0.8)
-					end
-				else 
-					self:fadebottom(0)
-				end
-			else
-				self:diffuse( PlayerColor(player) )
-			end
-		end
-	},	
-
 	--STEPS label
 	LoadFont("_@fot-newrodin pro db 20px")..{
-		Text=GAMESTATE:IsCourseMode() and Screen.String("SongNumber"):format(1) or Screen.String("STEPS"),
+		Text=stepsText,
 		InitCommand=function(self)
-			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):zoom(textZoom)
+			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):zoom(textZoom);
+			self:settext("")
 		end,
 		UpdateTrailTextMessageCommand=function(self, params)
 			self:settext( THEME:GetString("ScreenSelectCourse", "SongNumber"):format(params.index) )
+		end,
+		ResetCommand=function(self)
+			local SongOrCourse = GAMESTATE:IsCourseMode() and GAMESTATE:GetCurrentCourse() or GAMESTATE:GetCurrentSong()
+			local StepsOrTrail = GAMESTATE:IsCourseMode() and GAMESTATE:GetCurrentTrail(player) or GAMESTATE:GetCurrentSteps(player)
+
+			if SongOrCourse and StepsOrTrail then
+				local difficulty = StepsOrTrail:GetDifficulty()
+				self:diffuse( DifficultyColor(difficulty) )
+				self:settext(stepsText);
+			else
+				self:diffuse( PlayerColor(player) )
+				self:settext("")
+			end
 		end
 	},
 
@@ -153,9 +137,9 @@ return Def.ActorFrame{
 			self:diffuse(color("#1e282f")):horizalign(left):zoom(textZoom)
 
 			if GAMESTATE:IsCourseMode() then
-				self:x(62+nxXOffset):maxwidth(216)
+				self:x(62+nxXOffset):maxwidth(196)
 			else
-				self:x(77+nxXOffset):maxwidth(202):diffuse(color("#000000"))
+				self:x(77+nxXOffset):maxwidth(182):diffuse(color("#000000"))
 			end
 		end,
 		ResetCommand=function(self)
@@ -167,6 +151,9 @@ return Def.ActorFrame{
 			self:stoptweening()
 
 			if SongOrCourse and StepsOrTrail then
+
+				local difficulty = StepsOrTrail:GetDifficulty()
+				self:diffuse( DifficultyColor(difficulty) )
 
 				text_table = GetStepsCredit(player)
 				marquee_index = 0

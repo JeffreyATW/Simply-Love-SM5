@@ -7,11 +7,11 @@ local player = ...
 local pn = ToEnumShortString(player)
 
 -- Height and width of the density graph.
-local height = 64
-local width = IsUsingWideScreen() and 303 or 293
+local height = 56
+local width = IsUsingWideScreen() and 283 or 273
 
 local nxXOffset = -264
-local nxYOffset = 126
+local nxYOffset = 131
 
 local marquee_index
 local text_table = {}
@@ -23,7 +23,7 @@ local af = Def.ActorFrame{
 		self:xy(_screen.cx-182+nxXOffset, _screen.cy+23+nxYOffset)
 
 		if player == PLAYER_2 then
-			self:addx(width+16)
+			self:addx(width+36)
 		end
 
 		if IsUsingWideScreen() then
@@ -147,7 +147,7 @@ af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		if player == PLAYER_1 then
 			self:addx(40+nxPeakXOffset):addy(-41)
 		else
-			self:addx(-136+nxPeakXOffset):addy(-41)
+			self:addx(-131+nxPeakXOffset):addy(-41)
 		end
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
@@ -224,8 +224,8 @@ af2[#af2+1] = Def.ActorFrame{
 	end,
 	Def.Quad{
 		InitCommand=function(self)
-			local bgHeight = 17
-			self:diffuse(color("#000000")):zoomto(width, bgHeight):diffusealpha(0.5)
+			local bgHeight = 20
+			self:diffuse(color("#000000")):zoomto(width, bgHeight):diffusealpha(0.5):addy(-1.5)
 		end
 	},
 
