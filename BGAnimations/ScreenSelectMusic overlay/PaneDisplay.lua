@@ -8,7 +8,7 @@ local footer_height = 32
 -- height of the PaneDisplay in pixels
 local pane_height = 60
 
-local text_zoom = WideScale(0.8, 0.9)
+local text_zoom = WideScale(0.5, 0.6)
 
 -- -----------------------------------------------------------------------
 -- Convenience function to return the SongOrCourse and StepsOrTrail for a
@@ -317,27 +317,40 @@ for player in ivalues(PlayerNumber) do
 	af2["CurrentTrail"..pn.."ChangedMessageCommand"]=function(self) self:playcommand("Set") end
 
 	-- -----------------------------------------------------------------------
-	-- colored background Quad
+	-- background Quad
 
-	af2[#af2+1] = Def.Quad{
-		Name="BackgroundQuad",
+	af2[#af2+1] = LoadActor("pane.png") .. {
+		Name="BackgroundQuad";
 		InitCommand=function(self)
-			self:zoomtowidth(_screen.w/2-10)
-			self:zoomtoheight(pane_height)
-			self:vertalign(top)
-		end,
-		SetCommand=function(self)
-			local SongOrCourse, StepsOrTrail = GetSongAndSteps(player)
-			if GAMESTATE:IsHumanPlayer(player) then
-				if StepsOrTrail then
-					local difficulty = StepsOrTrail:GetDifficulty()
-					self:diffuse( DifficultyColor(difficulty) )
-				else
-					self:diffuse( PlayerColor(player) )
-				end
+			self:scaletocover(0, 0, _screen.w/2 + 100, 1)
+			self:y(-10);
+			if player == PLAYER_1 then
+				self:x(-49):align(.5,0)
+			elseif player == PLAYER_2 then
+				self:rotationy(180):x(-_screen.w/4+1):align(1,0)
 			end
 		end
 	}
+
+	-- af2[#af2+1] = Def.Quad{
+	-- 	Name="BackgroundQuad",
+	-- 	InitCommand=function(self)
+	-- 		self:zoomtowidth(_screen.w/2-10)
+	-- 		self:zoomtoheight(pane_height)
+	-- 		self:vertalign(top)
+	-- 	end,
+	-- 	SetCommand=function(self)
+	-- 		local SongOrCourse, StepsOrTrail = GetSongAndSteps(player)
+	-- 		if GAMESTATE:IsHumanPlayer(player) then
+	-- 			if StepsOrTrail then
+	-- 				local difficulty = StepsOrTrail:GetDifficulty()
+	-- 				self:diffuse( DifficultyColor(difficulty) )
+	-- 			else
+	-- 				self:diffuse( PlayerColor(player) )
+	-- 			end
+	-- 		end
+	-- 	end
+	-- }
 
 	-- -----------------------------------------------------------------------
 	-- loop through the six sub-tables in the PaneItems table
@@ -353,9 +366,9 @@ for player in ivalues(PlayerNumber) do
 			Name=item.name,
 
 			-- numerical value
-			LoadFont("Common Normal")..{
+			LoadFont("_@fot-newrodin pro db 20px")..{
 				InitCommand=function(self)
-					self:zoom(text_zoom):diffuse(Color.Black):horizalign(right)
+					self:zoom(text_zoom):diffuse(Color.White):horizalign(right)
 					self:x(pos.col[col])
 					self:y(pos.row[row])
 				end,
@@ -374,22 +387,24 @@ for player in ivalues(PlayerNumber) do
 			},
 
 			-- label
-			LoadFont("Common Normal")..{
+			LoadFont("_@fot-newrodin pro db 20px")..{
 				Text=item.name,
 				InitCommand=function(self)
-					self:zoom(text_zoom):diffuse(Color.Black):horizalign(left)
-					self:x(pos.col[col]+3)
+					self:zoom(text_zoom):diffuse(Color.White):horizalign(left)
+					self:x(pos.col[col]+6)
 					self:y(pos.row[row])
 				end
 			},
 		}
 	end
 
+	local tagWidth = 50;
+
 	-- Machine/World Record Machine Tag
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="MachineHighScoreName",
 		InitCommand=function(self)
-			self:zoom(text_zoom):diffuse(Color.Black):maxwidth(30)
+			self:zoom(text_zoom):diffuse(Color.White):maxwidth(tagWidth)
 			self:x(pos.col[3]-50*text_zoom)
 			self:y(pos.row[1])
 		end,
@@ -410,12 +425,14 @@ for player in ivalues(PlayerNumber) do
 		end
 	}
 
+	local highscoreXOffset = 70
+
 	-- Machine/World Record HighScore
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="MachineHighScore",
 		InitCommand=function(self)
-			self:zoom(text_zoom):diffuse(Color.Black):horizalign(right)
-			self:x(pos.col[3]+25*text_zoom)
+			self:zoom(text_zoom):diffuse(Color.White):horizalign(right)
+			self:x(pos.col[3]+highscoreXOffset*text_zoom)
 			self:y(pos.row[1])
 		end,
 		SetCommand=function(self)
@@ -439,10 +456,10 @@ for player in ivalues(PlayerNumber) do
 	}
 
 	-- Player Profile/GrooveStats Machine Tag 
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="PlayerHighScoreName",
 		InitCommand=function(self)
-			self:zoom(text_zoom):diffuse(Color.Black):maxwidth(30)
+			self:zoom(text_zoom):diffuse(Color.White):maxwidth(tagWidth)
 			self:x(pos.col[3]-50*text_zoom)
 			self:y(pos.row[2])
 		end,
@@ -463,11 +480,11 @@ for player in ivalues(PlayerNumber) do
 	}
 
 	-- Player Profile/GrooveStats HighScore
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="PlayerHighScore",
 		InitCommand=function(self)
-			self:zoom(text_zoom):diffuse(Color.Black):horizalign(right)
-			self:x(pos.col[3]+25*text_zoom)
+			self:zoom(text_zoom):diffuse(Color.White):horizalign(right)
+			self:x(pos.col[3]+highscoreXOffset*text_zoom)
 			self:y(pos.row[2])
 		end,
 		SetCommand=function(self)
@@ -489,11 +506,11 @@ for player in ivalues(PlayerNumber) do
 		end
 	}
 
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="Loading",
 		Text="Loading ... ",
 		InitCommand=function(self)
-			self:zoom(text_zoom):diffuse(Color.Black)
+			self:zoom(text_zoom):diffuse(Color.White)
 			self:x(pos.col[3]-15)
 			self:y(pos.row[3])
 			self:visible(false)
@@ -505,11 +522,11 @@ for player in ivalues(PlayerNumber) do
 	}
 
 	-- Chart Difficulty Meter
-	af2[#af2+1] = LoadFont("Wendy/_wendy small")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 40px")..{
 		Name="DifficultyMeter",
 		InitCommand=function(self)
-			self:horizalign(right):diffuse(Color.Black)
-			self:xy(pos.col[4], pos.row[2])
+			self:horizalign(right):diffuse(Color.White)
+			self:xy(pos.col[4] + 5, pos.row[2] + 5)
 			if not IsUsingWideScreen() then self:maxwidth(66) end
 			self:queuecommand("Set")
 		end,
@@ -524,6 +541,15 @@ for player in ivalues(PlayerNumber) do
 			local meter = StepsOrTrail and StepsOrTrail:GetMeter() or "?"
 
 			self:settext( meter )
+
+			if GAMESTATE:IsHumanPlayer(player) then
+				if StepsOrTrail then
+					local difficulty = StepsOrTrail:GetDifficulty()
+					self:diffuse( DifficultyColor(difficulty) )
+				else
+					self:diffuse( PlayerColor(player) )
+				end
+			end
 		end
 	}
 
@@ -531,10 +557,10 @@ for player in ivalues(PlayerNumber) do
 	-- We position relative to column 3 for spacing reasons.
 	for i=1,3 do
 		-- Rival Machine Tag
-		af2[#af2+1] = LoadFont("Common Normal")..{
+		af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 			Name="Rival"..i.."Name",
 			InitCommand=function(self)
-				self:zoom(text_zoom):diffuse(Color.Black):maxwidth(30)
+				self:zoom(text_zoom):diffuse(Color.White):maxwidth(tagWidth)
 				self:x(pos.col[3]+50*text_zoom)
 				self:y(pos.row[i])
 			end,
@@ -547,10 +573,10 @@ for player in ivalues(PlayerNumber) do
 		}
 
 		-- Rival HighScore
-		af2[#af2+1] = LoadFont("Common Normal")..{
+		af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 			Name="Rival"..i.."Score",
 			InitCommand=function(self)
-				self:zoom(text_zoom):diffuse(Color.Black):horizalign(right)
+				self:zoom(text_zoom):diffuse(Color.White):horizalign(right)
 				self:x(pos.col[3]+125*text_zoom)
 				self:y(pos.row[i])
 			end,

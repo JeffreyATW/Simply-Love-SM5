@@ -684,7 +684,7 @@ end
 t[#t+1] = LoadActor("./PerPlayer/default.lua");
 
 af[#af+1] = Def.ActorFrame {
-	InitCommand=cmd(zoom,.73;addy,-145;draworder,-5;wag;effectmagnitude,-1,-1,-0.5;effecttiming,7,0,7,0;addx,-490;fov,90;rotationy,-5;diffusealpha,0;addz,100;);
+	InitCommand=cmd(zoom,.73;addy,-140;draworder,-5;wag;effectmagnitude,-1,-1,-0.5;effecttiming,7,0,7,0;addx,-490;fov,90;rotationy,-5;diffusealpha,0;addz,100;);
 	OnCommand=cmd(decelerate,0.8;addx,400;diffusealpha,1;addz,-100;bob;effectmagnitude,0,4,0;effecttiming,4,0,4,0;);
 	OffCommand=cmd(decelerate,0.5;addx,-400;diffusealpha,0;addz,100;);
 	t;
