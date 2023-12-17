@@ -139,13 +139,13 @@ end;
 local function GetDifListX(self,pn,offset,fade)
 	if pn==PLAYER_1 then
 		--self:horizalign(left);
-		self:x(SCREEN_CENTER_X+150-offset+125);
+		self:x(SCREEN_CENTER_X-offset+275);
 		if fade>0 then
 			self:faderight(fade);
 		end;
 	else
 		--self:horizalign(right);
-		self:x(SCREEN_CENTER_X+150-offset+150);
+		self:x(SCREEN_CENTER_X-offset+310);
 		if fade>0 then
 			self:fadeleft(fade);
 		end;
@@ -178,7 +178,7 @@ local function DrawDifList(pn,diff)
 				song=GAMESTATE:GetCurrentSong();
 				
 				if song then
-					GetDifListX(self,pn,230,0);
+					GetDifListX(self,pn,235,0);
 					--self:y(GetFlexDifListY(diff, st, song));
 					self:y(GetDifListY(diff)+1);
 					if song:HasStepsTypeAndDifficulty(st,diff) then
@@ -281,21 +281,6 @@ local function DrawDifListPlayershadowp1(pn,diff)
 	return f;
 end;
 
-local function DrawDifListPlayershadowp1f(pn,diff)
-	local f = Def.ActorFrame {
-		InitCommand=cmd(player,pn;y,SCREEN_CENTER_y+400;);
-		Def.ActorFrame {
-
-			CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentTrailP1ChangedMessageCommand=cmd(playcommand,"Set");
-			CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
-			--CurrentTrailP2ChangedMessageCommand=cmd(playcommand,"Set");
-		};
-			
-	}
-	return f;
-end;
-
 if not GAMESTATE:IsCourseMode() then
 
 t[#t+1] = Def.ActorFrame {
@@ -365,7 +350,7 @@ t[#t+1] = Def.BitmapText {
 		Font = "_@fot-newrodin pro db 20px",
 		InitCommand=cmd(horizalign,left;x,SCREEN_CENTER_X-320;y,SCREEN_CENTER_Y-141;zoom,0.5;shadowlengthy,2;diffusealpha,0.5;),
 		OnCommand=function(self)
-			self:settext("Song Length:            BPM:                                       P1    P2")
+			self:settext("Song Length:            BPM:                                     P1      P2")
 			end;	
 			BeginCommand=cmd(playcommand,"Set");
 			OffCommand=cmd(decelerate,0.25;diffusealpha,0;);
