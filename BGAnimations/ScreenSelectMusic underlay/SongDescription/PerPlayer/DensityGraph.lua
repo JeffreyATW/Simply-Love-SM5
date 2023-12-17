@@ -183,7 +183,7 @@ af2[#af2+1] = Def.ActorFrame{
 	}
 }
 
-local patternInfoY = -12
+local patternInfoY = -20
 
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
