@@ -110,7 +110,7 @@ return Def.ActorFrame{
 	LoadFont("_@fot-newrodin pro db 20px")..{
 		Text=stepsText,
 		InitCommand=function(self)
-			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):zoom(textZoom);
+			self:diffuse(1,1,1,1):horizalign(left):x(30+nxXOffset):zoom(textZoom);
 			self:settext("")
 		end,
 		UpdateTrailTextMessageCommand=function(self, params)
@@ -121,11 +121,8 @@ return Def.ActorFrame{
 			local StepsOrTrail = GAMESTATE:IsCourseMode() and GAMESTATE:GetCurrentTrail(player) or GAMESTATE:GetCurrentSteps(player)
 
 			if SongOrCourse and StepsOrTrail then
-				local difficulty = StepsOrTrail:GetDifficulty()
-				self:diffuse( DifficultyColor(difficulty) )
 				self:settext(stepsText);
 			else
-				self:diffuse( PlayerColor(player) )
 				self:settext("")
 			end
 		end
@@ -134,12 +131,12 @@ return Def.ActorFrame{
 	--stepartist text
 	LoadFont("_@fot-newrodin pro db 20px")..{
 		InitCommand=function(self)
-			self:diffuse(color("#1e282f")):horizalign(left):zoom(textZoom)
+			self:diffuse(Color.White):horizalign(left):zoom(textZoom)
 
 			if GAMESTATE:IsCourseMode() then
 				self:x(62+nxXOffset):maxwidth(196)
 			else
-				self:x(77+nxXOffset):maxwidth(182):diffuse(color("#000000"))
+				self:x(77+nxXOffset):maxwidth(182)
 			end
 		end,
 		ResetCommand=function(self)
@@ -151,9 +148,6 @@ return Def.ActorFrame{
 			self:stoptweening()
 
 			if SongOrCourse and StepsOrTrail then
-
-				local difficulty = StepsOrTrail:GetDifficulty()
-				self:diffuse( DifficultyColor(difficulty) )
 
 				text_table = GetStepsCredit(player)
 				marquee_index = 0
