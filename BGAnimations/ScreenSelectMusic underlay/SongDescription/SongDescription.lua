@@ -316,44 +316,31 @@ t[#t+1] = Def.ActorFrame {
 					else
 						self:Load(THEME:GetPathG("","Common fallback jacket"));
 					end;
-					self:zoomtowidth(130);
-					self:zoomtoheight(130);
-					self:croptop(0.274);
-					self:cropbottom(0.271);
-					self:faderight(0.5);
-					self:fadeleft(0.5)
 				elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
 				and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
 					local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
 					if not GAMESTATE:GetCurrentSong() then
 						myLoadGroupJacket(selgrp, self);
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);	
-						self:croptop(0.274);
-					self:cropbottom(0.271);
-						self:faderight(0.5);
-						self:fadeleft(0.5)
 						self:stoptweening();
 					else
 						self:Load(THEME:GetPathG("","Common fallback jacket"));
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);	
-						self:croptop(0.274);
-					self:cropbottom(0.271);
-						self:faderight(0.5);
-						self:fadeleft(0.5)
 						self:stoptweening();							
 					end;
 			else
 					self:diffusealpha(1);
-					self:Load(THEME:GetPathG("","Common fallback jacket"));
-					self:zoomtowidth(130);
-					self:zoomtoheight(130);		
-					self:croptop(0.274);
-					self:cropbottom(0.271);
-					self:faderight(0.5);
-					self:fadeleft(0.5)						
+					self:Load(THEME:GetPathG("","Common fallback jacket"));					
 			end;
+			self:scaletocover(0, 0, 130, 130);
+			local zoomedWidth = self:GetWidth() * self:GetZoom();
+			local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+
+			self:cropright(sideCrop);
+			self:cropleft(sideCrop);
+			self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
+			self:croptop(0.274);
+			self:cropbottom(0.271);
+			self:faderight(0.5);
+			self:fadeleft(0.5)	
 		else
 			local course = GAMESTATE:GetCurrentCourse();
 			if course then
