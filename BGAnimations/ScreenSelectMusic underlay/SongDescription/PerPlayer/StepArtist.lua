@@ -46,6 +46,8 @@ local nxYOffset = 66;
 
 local p2XOffset = 335;
 
+local textZoom = 0.6;
+
 return Def.ActorFrame{
 	Name="StepArtistAF_" .. pn,
 
@@ -135,10 +137,10 @@ return Def.ActorFrame{
 	},	
 
 	--STEPS label
-	LoadFont("Common Normal")..{
+	LoadFont("_@fot-newrodin pro db 20px")..{
 		Text=GAMESTATE:IsCourseMode() and Screen.String("SongNumber"):format(1) or Screen.String("STEPS"),
 		InitCommand=function(self)
-			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):maxwidth(40):zoom(0.8)
+			self:diffuse(0,0,0,1):horizalign(left):x(30+nxXOffset):zoom(textZoom)
 		end,
 		UpdateTrailTextMessageCommand=function(self, params)
 			self:settext( THEME:GetString("ScreenSelectCourse", "SongNumber"):format(params.index) )
@@ -146,13 +148,14 @@ return Def.ActorFrame{
 	},
 
 	--stepartist text
-	LoadFont("Common Normal")..{
+	LoadFont("_@fot-newrodin pro db 20px")..{
 		InitCommand=function(self)
-			self:diffuse(color("#1e282f")):horizalign(left):zoom(0.8)
+			self:diffuse(color("#1e282f")):horizalign(left):zoom(textZoom)
+
 			if GAMESTATE:IsCourseMode() then
-				self:x(60+nxXOffset):maxwidth(138)
+				self:x(62+nxXOffset):maxwidth(216)
 			else
-				self:x(75+nxXOffset):maxwidth(124):diffuse(color("#000000"))
+				self:x(77+nxXOffset):maxwidth(202):diffuse(color("#000000"))
 			end
 		end,
 		ResetCommand=function(self)

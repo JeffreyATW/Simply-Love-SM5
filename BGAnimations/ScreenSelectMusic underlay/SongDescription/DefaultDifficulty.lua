@@ -104,15 +104,15 @@ for idx,diff in pairs(DiffList) do
 
 		LoadActor("StepsDisplay ticks")..{--���ϼ�
 			Name="Meter";
-			ShowCommand=cmd(stoptweening;linear,0.1;diffuse,CustomDifficultyToColor( sDifficulty ););
+			ShowCommand=cmd(stoptweening;linear,0.1;diffuse,DifficultyColor( diff ););
 			HideCommand=cmd(stoptweening;decelerate,0.2;shadowlengthy,2;diffuse,color( "0.5,0.5,0.5,0.5"));
 			InitCommand=cmd(x,0-76;y,diffLocationY+1.3;shadowlengthy,2;zoom,0.44;);
-			UnSelectCommand=cmd(stoptweening;decelerate,0.2;shadowlengthy,2;diffuse,CustomDifficultyToColor( sDifficulty ));
+			UnSelectCommand=cmd(stoptweening;decelerate,0.2;shadowlengthy,2;diffuse,DifficultyColor( diff ));
 		};
 		
 		LoadFont("_@fot-newrodin pro db 20px") .. { --���״y�z
 			Name="Meter";
-			Text=THEME:GetString("CustomDifficulty",ToEnumShortString(diff));
+			Text=THEME:GetString("CustomDifficulty",sDifficulty);
 			ShowCommand=cmd(stoptweening;linear,0.1;;diffuse,color("1,1,1,1");strokecolor, color( "0,0,0,0" );zoomx,0.40);
 			HideCommand=cmd(stoptweening;decelerate,0.2;shadowlengthy,2;diffuse,color( "0.5,0.5,0.5,0.5" );zoomx,0.40);
 			InitCommand=cmd(horizalign,left;x,0-70;y,diffLocationY+2;shadowlengthy,2;zoomx,0.40;zoomy,0.4);

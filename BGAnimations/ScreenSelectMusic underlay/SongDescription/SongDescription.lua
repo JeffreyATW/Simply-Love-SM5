@@ -525,9 +525,7 @@ t[#t+1] = Def.ActorFrame { --song jacket
 							self:Load(THEME:GetPathG("","Common fallback jacket"));					
 					end;
 					self:scaletocover(0, 0, 130, 130);
-					local width = self:GetWidth();
-					local zoom = self:GetZoom();
-					local zoomedWidth = width * zoom;
+					local zoomedWidth = self:GetWidth() * self:GetZoom();
 					local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
 
 					self:cropright(sideCrop);
