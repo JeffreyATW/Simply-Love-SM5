@@ -304,68 +304,56 @@ t[#t+1] = Def.ActorFrame {
 	Def.Banner {
 		OnCommand=cmd();
 		SetCommand=function(self)
-		if not GAMESTATE:IsCourseMode() then
-		local song = GAMESTATE:GetCurrentSong();
+			if not GAMESTATE:IsCourseMode() then
+				local song = GAMESTATE:GetCurrentSong();
 				if song then
 					if song:HasJacket() then
 						self:diffusealpha(1);
 						self:LoadBackground(song:GetJacketPath());
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);	
-						self:croptop(0.274);
-						self:cropbottom(0.271);
-						self:faderight(0.5);
-						self:fadeleft(0.5);
 					elseif song:HasBackground() then
 						self:diffusealpha(1);
 						self:LoadFromCached("background",song:GetBackgroundPath())
+					else
+						self:Load(THEME:GetPathG("","Common fallback jacket"));
+					end;
+					self:zoomtowidth(130);
+					self:zoomtoheight(130);
+					self:croptop(0.274);
+					self:cropbottom(0.271);
+					self:faderight(0.5);
+					self:fadeleft(0.5)
+				elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
+				and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
+					local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+					if not GAMESTATE:GetCurrentSong() then
+						myLoadGroupJacket(selgrp, self);
 						self:zoomtowidth(130);
 						self:zoomtoheight(130);	
 						self:croptop(0.274);
-						self:cropbottom(0.271);
+					self:cropbottom(0.271);
 						self:faderight(0.5);
 						self:fadeleft(0.5)
+						self:stoptweening();
 					else
 						self:Load(THEME:GetPathG("","Common fallback jacket"));
 						self:zoomtowidth(130);
-						self:zoomtoheight(130);
+						self:zoomtoheight(130);	
 						self:croptop(0.274);
-						self:cropbottom(0.271);
+					self:cropbottom(0.271);
 						self:faderight(0.5);
 						self:fadeleft(0.5)
+						self:stoptweening();							
 					end;
-				elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
-				and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
-						local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
-						if not GAMESTATE:GetCurrentSong() then
-							myLoadGroupJacket(selgrp, self);
-							self:zoomtowidth(130);
-							self:zoomtoheight(130);	
-							self:croptop(0.274);
-						self:cropbottom(0.271);
-							self:faderight(0.5);
-							self:fadeleft(0.5)
-							self:stoptweening();
-						else
-							self:Load(THEME:GetPathG("","Common fallback jacket"));
-							self:zoomtowidth(130);
-							self:zoomtoheight(130);	
-							self:croptop(0.274);
-						self:cropbottom(0.271);
-							self:faderight(0.5);
-							self:fadeleft(0.5)
-							self:stoptweening();							
-						end;
-				else
-						self:diffusealpha(1);
-						self:Load(THEME:GetPathG("","Common fallback jacket"));
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);		
-						self:croptop(0.274);
-						self:cropbottom(0.271);
-						self:faderight(0.5);
-						self:fadeleft(0.5)						
-				end;
+			else
+					self:diffusealpha(1);
+					self:Load(THEME:GetPathG("","Common fallback jacket"));
+					self:zoomtowidth(130);
+					self:zoomtoheight(130);		
+					self:croptop(0.274);
+					self:cropbottom(0.271);
+					self:faderight(0.5);
+					self:fadeleft(0.5)						
+			end;
 		else
 			local course = GAMESTATE:GetCurrentCourse();
 			if course then
@@ -502,7 +490,7 @@ t[#t+1] = StandardDecorationFromFileOptional("BPMDisplay","BPMDisplay")..{
 	CurrentTrailP2ChangedMessageCommand=cmd(playcommand,"Set");
 };
 
-
+local count = 0;
 
 t[#t+1] = Def.ActorFrame { --song jacket
  	InitCommand=cmd(zoom,2;x,SCREEN_CENTER_X-470;y,SCREEN_CENTER_Y-73;diffusealpha,1;draworder,1;diffusealpha,0;linear,0.5;diffusealpha,1;);
@@ -510,54 +498,51 @@ t[#t+1] = Def.ActorFrame { --song jacket
 	Def.Banner {
 		OnCommand=cmd(ztest,false;);
 		SetCommand=function(self)
-		if not GAMESTATE:IsCourseMode() then
-		local song = GAMESTATE:GetCurrentSong();
-				if song then
-					if song:HasJacket() then
-						self:diffusealpha(1);
-						self:LoadBackground(song:GetJacketPath());
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);					
-					elseif song:HasBackground() then
-						self:diffusealpha(1);
-						self:LoadFromCached("background",song:GetBackgroundPath())
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);							
-					else
-						self:Load(THEME:GetPathG("","Common fallback jacket"));
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);							
-					end;
-				elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
-				and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
-						local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
-						if not GAMESTATE:GetCurrentSong() then
-							myLoadGroupJacket(selgrp, self);
-							self:zoomtowidth(130);
-							self:zoomtoheight(130);	
-							self:stoptweening();
+			if not GAMESTATE:IsCourseMode() then
+			local song = GAMESTATE:GetCurrentSong();
+					if song then
+						if song:HasJacket() then
+							self:diffusealpha(1);
+							self:LoadBackground(song:GetJacketPath());
+						elseif song:HasBackground() then
+							self:diffusealpha(1);
+							self:LoadFromCached("background",song:GetBackgroundPath())
 						else
 							self:Load(THEME:GetPathG("","Common fallback jacket"));
-							self:zoomtowidth(130);
-							self:zoomtoheight(130);	
-							self:stoptweening();							
 						end;
-				else
-						self:diffusealpha(1);
-						self:Load(THEME:GetPathG("","Common fallback jacket"));
-						self:zoomtowidth(130);
-						self:zoomtoheight(130);							
+					elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
+					and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
+							local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+							if not GAMESTATE:GetCurrentSong() then
+								myLoadGroupJacket(selgrp, self);
+								self:stoptweening();
+							else
+								self:Load(THEME:GetPathG("","Common fallback jacket"));
+								self:stoptweening();							
+							end;
+					else
+							self:diffusealpha(1);
+							self:Load(THEME:GetPathG("","Common fallback jacket"));					
+					end;
+					self:scaletocover(0, 0, 130, 130);
+					local width = self:GetWidth();
+					local zoom = self:GetZoom();
+					local zoomedWidth = width * zoom;
+					local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+
+					self:cropright(sideCrop);
+					self:cropleft(sideCrop);
+					self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
+			else
+				local course = GAMESTATE:GetCurrentCourse();
+				if course then
+					self:x(SCREEN_CENTER_X+0);
+					self:LoadFromCourse(GAMESTATE:GetCurrentCourse());
+							self:zoomtowidth(304);
+							self:zoomtoheight(304);				
 				end;
-		else
-			local course = GAMESTATE:GetCurrentCourse();
-			if course then
-				self:x(SCREEN_CENTER_X+0);
-				self:LoadFromCourse(GAMESTATE:GetCurrentCourse());
-						self:zoomtowidth(304);
-						self:zoomtoheight(304);				
 			end;
-		end;
-		self:stoptweening();
+			self:stoptweening();
 		end;
 		CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
 		};
