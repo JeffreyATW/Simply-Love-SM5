@@ -17,23 +17,33 @@ local marquee_index
 local text_table = {}
 local leaving_screen = false
 
+local x = _screen.cx-182+nxXOffset
+
 local af = Def.ActorFrame{
 	InitCommand=function(self)
+		self:xy(x, _screen.cy+23+nxYOffset)
 		self:visible( GAMESTATE:IsHumanPlayer(player) )
-		self:xy(_screen.cx-182+nxXOffset, _screen.cy+23+nxYOffset)
 
+		self:queuecommand("Shift");
+	end,
+	ShiftCommand=function(self, params)
+		local myX = x
 		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
-			self:addx(width+36)
+			myX = x + width + 36
 		end
 
 		if IsUsingWideScreen() then
-			self:addx(-5)
+			myX = myX - 5
 		end
+
+		self:x(myX)
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
 		if params.Player == player then
 			self:visible(true)
 		end
+
+		self:queuecommand("Shift");
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
 		if params.Player == player then
@@ -121,13 +131,19 @@ af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 	Text="",
 	InitCommand=function(self)
 		self:horizalign(left):zoom(textZoom)
-		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
-			self:addx(-241+nxPeakXOffset):addy(-41)
-		else
-			self:addx(40+nxPeakXOffset):addy(-41)
-		end
+		self:playcommand("Shift")
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
+	end,
+	ShiftCommand=function(self)
+		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
+			self:x(-241+nxPeakXOffset):y(-41)
+		else
+			self:x(40+nxPeakXOffset):y(-41)
+		end
+	end,
+	PlayerJoinedMessageCommand=function(self, params)
+		self:queuecommand("Shift");
 	end,
 	HideCommand=function(self)
 		self:settext("Peak NPS: ")
