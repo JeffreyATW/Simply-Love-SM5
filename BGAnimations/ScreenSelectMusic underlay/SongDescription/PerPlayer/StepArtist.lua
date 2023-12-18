@@ -26,47 +26,50 @@ return Def.ActorFrame{
 		if params.Player == player then
 			self:queuecommand("Appear" .. pn)
 		end
+		self:queuecommand("Shift")
 	end,
 
 	-- Simply Love doesn't support player unjoining (that I'm aware of!) but this
 	-- animation is left here as a reminder to a future me to maybe look into it.
 	PlayerUnjoinedMessageCommand=function(self, params)
 		if params.Player == player then
-			self:ease(0.5, 275):addy(30):diffusealpha(0)
+			self:ease(0.5, 275):diffusealpha(0)
 		end
 	end,
 
 	-- depending on the value of pn, this will either become
 	-- an AppearP1Command or an AppearP2Command when the screen initializes
-	["Appear"..pn.."Command"]=function(self) self:visible(true):ease(0.5, 275):addy(30) end,
+	["Appear"..pn.."Command"]=function(self) self:visible(true) end,
+	ShiftCommand=function(self)
+		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
+			if GAMESTATE:IsCourseMode() then
+				self:x( _screen.cx - 210 + p2XOffset)
+				self:y(_screen.cy + nxYOffset + 62)
+			else
+				self:x( _screen.cx - 244 + p2XOffset)
+				self:y(_screen.cy + nxYOffset + 42)
+			end
+
+		else
+
+			if GAMESTATE:IsCourseMode() then
+				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
+				self:y(_screen.cy + nxYOffset + 62)
+			else
+				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
+				self:y(_screen.cy + nxYOffset + 42)
+			end
+		end
+	end,
 
 	InitCommand=function(self)
 		self:visible( false ):halign( p )
 
-		if player == PLAYER_1 then
-
-			if GAMESTATE:IsCourseMode() then
-				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
-				self:y(_screen.cy + nxYOffset + 32)
-			else
-				self:x( _screen.cx - (IsUsingWideScreen() and 356 or 346))
-				self:y(_screen.cy + nxYOffset + 12)
-			end
-
-		elseif player == PLAYER_2 then
-
-			if GAMESTATE:IsCourseMode() then
-				self:x( _screen.cx - 210 + p2XOffset)
-				self:y(_screen.cy + nxYOffset + 32)
-			else
-				self:x( _screen.cx - 244 + p2XOffset)
-				self:y(_screen.cy + nxYOffset + 12)
-			end
-		end
-
 		if GAMESTATE:IsHumanPlayer(player) then
 			self:queuecommand("Appear" .. pn)
 		end
+
+		self:queuecommand("Shift")
 	end,
 
 	-- colored background quad
