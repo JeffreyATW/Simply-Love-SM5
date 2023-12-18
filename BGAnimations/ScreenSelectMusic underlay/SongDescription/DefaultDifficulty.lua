@@ -67,8 +67,9 @@ for idx,diff in pairs(DiffList) do
 		    c.Meter:settextf( "%01d", meter );
 			local curDiff1;
 			local curDiff2;
-			if GAMESTATE:IsPlayerEnabled(PLAYER_1) then 
-				local currentSteps = GAMESTATE:GetCurrentSteps(PLAYER_1);
+			local pn = GAMESTATE:IsPlayerEnabled(PLAYER_1) and PLAYER_1 or PLAYER_2;
+			if GAMESTATE:IsPlayerEnabled(pn) then 
+				local currentSteps = GAMESTATE:GetCurrentSteps(pn);
 				if currentSteps ~= nil then
 					curDiff1 = currentSteps:GetDifficulty();
 				end
