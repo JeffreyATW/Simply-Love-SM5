@@ -19,9 +19,6 @@ local af = Def.ActorFrame{
 
 local nxYOffset = -155
 
-local t = Def.ActorFrame{
-};
-
 function TopRecord(pn) --�^�ǳ̰��������Ӭ���
 	local SongOrCourse, StepsOrTrail;
 	local myScoreSet = {
@@ -159,11 +156,6 @@ local function DrawDifList(pn,diff)
 		InitCommand=cmd(player,pn;y,SCREEN_CENTER_Y-115;x,-75;zoom,1.0);
 		OffCommand=cmd(linear,0.25;diffusealpha,0;);
 		song=GAMESTATE:GetCurrentSong();
-		CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
-		CurrentTrailP1ChangedMessageCommand=cmd(queuecommand,"Set");
-		CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
-		CurrentTrailP2ChangedMessageCommand=cmd(queuecommand,"Set");
-		CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
 		
 ---Grade
 	
@@ -172,12 +164,13 @@ local function DrawDifList(pn,diff)
 			BeginCommand=cmd(playcommand,"Set");
 			OffCommand=cmd(linear,0.25;diffusealpha,0;);
 			SetCommand=function(self)
+				self:player(pn);
 				local st=GAMESTATE:GetCurrentStyle():GetStepsType();
 				
 				local song=nil;
 				song=GAMESTATE:GetCurrentSong();
 				
-				if song then
+				if song and GAMESTATE:IsPlayerEnabled(pn) then
 					GetDifListX(self,pn,235,0);
 					--self:y(GetFlexDifListY(diff, st, song));
 					self:y(GetDifListY(diff)+1);
@@ -236,6 +229,11 @@ local function DrawDifList(pn,diff)
 					self:diffusealpha(0);
 				end;
 			end;
+			CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
+			CurrentTrailP1ChangedMessageCommand=cmd(queuecommand,"Set");
+			CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
+			CurrentTrailP2ChangedMessageCommand=cmd(queuecommand,"Set");
+			CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
 		};		
 	};
 	return t;
@@ -244,41 +242,52 @@ end;
 --player selection
 
 local function DrawDifListPlayershadowp1(pn,diff)
+	
 	local f = Def.ActorFrame {
-		InitCommand=cmd(player,pn;x,SCREEN_CENTER_X-10-5;y,SCREEN_TOP+280+nxYOffset;diffuseramp;effectcolor2,Color.White;effectcolor1,color("1,1,1,0.5");effectclock,'beatnooffset');
+		InitCommand=cmd(x,SCREEN_CENTER_X-207;y,SCREEN_TOP+281+nxYOffset;diffuseramp;effectcolor2,Color.White;effectcolor1,color("1,1,1,0.5");effectclock,'beatnooffset');
 		LoadActor("p1_shadow") .. {
-			InitCommand=cmd(zoom,1);
+			InitCommand=function(self)
+				self:zoom(1):y(GetDifListY(diff));
+				if (pn == PLAYER_2) then
+					self:rotationy(180);
+					self:x(115);
+				end
+			end;
 			OnCommand=cmd(diffusealpha,0;linear,0.05;diffusealpha,1);
 			BeginCommand=cmd(playcommand,"Set");
 			OffCommand=cmd(linear,0.25;diffusealpha,0;);
 			SetCommand=function(self)
-				if GAMESTATE:IsHumanPlayer(PLAYER_1) then
+				if GAMESTATE:IsHumanPlayer(pn) then
 					local st=GAMESTATE:GetCurrentStyle():GetStepsType();
 					local song=GAMESTATE:GetCurrentSong();
 					if song then
 						local currentSteps = GAMESTATE:GetCurrentSteps(pn)
 						if currentSteps and song:HasStepsTypeAndDifficulty(st,diff) and diff==currentSteps:GetDifficulty() then
 							self:diffusealpha(1);
-							self:y(GetDifListY(diff));
 						else
 							self:stopeffect();
 							self:diffusealpha(0);
-					end
+						end
 					else
 							self:stopeffect();
 							self:diffusealpha(0);
 					end;
+				else
+					self:stopeffect();
+					self:diffusealpha(0);	
 				end;
 			end;
 			CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
 			CurrentTrailP1ChangedMessageCommand=cmd(playcommand,"Set");
 			CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
+			CurrentTrailP2ChangedMessageCommand=cmd(playcommand,"Set");
+			CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
 		};
-		
-		
 	}
 	return f;
 end;
+
+local t = Def.ActorFrame {};
 
 if not GAMESTATE:IsCourseMode() then
 
@@ -516,15 +525,6 @@ t[#t+1] = Def.ActorFrame { --song jacket
 		};
 };
 
-
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Beginner');
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Easy');
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Medium');
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Hard');
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Challenge');
-t[#t+1]=DrawDifListPlayershadowp1(PLAYER_1,'Difficulty_Edit');
-
-
 --Default Difficulty List
 t[#t+1] = LoadActor("DefaultDifficulty.lua")..{
 	InitCommand=cmd(x,SCREEN_CENTER_X-165-5;y,SCREEN_CENTER_Y-115;zoom,1.5);
@@ -533,25 +533,12 @@ t[#t+1] = LoadActor("DefaultDifficulty.lua")..{
 
 };
 
-	
-if GAMESTATE:IsPlayerEnabled(PLAYER_1) then
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Beginner');
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Easy');
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Medium');
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Hard');
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Challenge');
-t[#t+1]=DrawDifList(PLAYER_1,'Difficulty_Edit');
-end;
-
-
-if GAMESTATE:IsPlayerEnabled(PLAYER_2) then
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Beginner');
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Easy');
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Medium');
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Hard');
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Challenge');
-	t[#t+1]=DrawDifList(PLAYER_2,'Difficulty_Edit');
+for _, pn in ipairs({ PLAYER_1, PLAYER_2 }) do
+	for __, diff in ipairs({ 'Beginner', 'Easy', 'Medium', 'Hard', 'Challenge', 'Edit'}) do
+		t[#t+1]=DrawDifListPlayershadowp1(pn,'Difficulty_' .. diff);
+		t[#t+1]=DrawDifList(pn,'Difficulty_' .. diff);
 	end;
+end;
 
 end;
 
