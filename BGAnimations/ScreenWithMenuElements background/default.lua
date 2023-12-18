@@ -79,7 +79,7 @@ t[#t+1] = Def.ActorFrame {
 t[#t+1] = Def.ActorFrame{
 		Def.ActorFrame{
 			InitCommand=cmd(zwrite,false;fov,100;x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y-70;rotationx,-35;spin;effectmagnitude,0,0,5;);
-			LoadActor( THEME:GetPathB("_shared","models/DDRNote") )..{
+			LoadActor( THEME:GetPathB("_shared","models/PETERS_METAL") )..{
 			OnCommand=cmd(diffusealpha,0;zoom,10;heartbeat;effectclock,'beat';effectmagnitude,1.0,1.01,1.0;effectoffset,0.5;decelerate,1;diffusealpha,0.25;);
 			};
 		};
