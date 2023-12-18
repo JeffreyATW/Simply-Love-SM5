@@ -3,13 +3,16 @@ local curStage = GAMESTATE:GetCurrentStage();
 local curStageIndex = GAMESTATE:GetCurrentStageIndex();
 local t = Def.ActorFrame {};
 
+local bigZoom = 0.75
+local smallZoom = 0.5
+
 t[#t+1] = Def.ActorFrame {
 		Def.Quad{
 			InitCommand=cmd(diffuse,color("#000000");zoomto,100,30;);
 			OnCommand=cmd(diffusealpha,0.4;fadeleft,0.2;faderight,0.2;);
 		};
-	LoadFont("Common Normal") .. {
-		InitCommand=cmd(y,-1;shadowlength,1;zoom,1;strokecolor,color("#000000"));
+	LoadFont("_@fot-newrodin pro db 20px") .. {
+		InitCommand=cmd(y,-1;shadowlength,1;zoom,bigZoom;strokecolor,color("#000000"));
 		BeginCommand=function(self)
 			local top = SCREENMAN:GetTopScreen()
 			if top then
@@ -27,10 +30,10 @@ t[#t+1] = Def.ActorFrame {
 			else
 				if THEME:GetMetric(curScreen,"StageDisplayUseShortString") then
 				  self:settextf("%s", ToEnumShortString(curStage));
-				  self:zoom(0.75);
+				  self:zoom(smallZoom);
 				else
 				  self:settextf("%s Stage", ToEnumShortString(curStage));
-				  self:zoom(1);
+				  self:zoom(bigZoom);
 				end;
 			end;
 			-- StepMania is being stupid so we have to do this here;

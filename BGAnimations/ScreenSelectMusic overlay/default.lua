@@ -48,6 +48,9 @@ local af = Def.ActorFrame{
 	-- The grid for the difficulty picker (normal) or CourseContentsList (CourseMode)
 --	LoadActor("./StepsDisplayList/default.lua"),
 
+	-- elements we need two of (one for each player) that draw underneath the StepsDisplayList
+	LoadActor("./PerPlayer/default.lua");
+
 	-- ---------------------------------------------------
 	-- finally, load the overlay used for sorting the MusicWheel (and more), hidden by default
 	LoadActor("./SortMenu/default.lua"),

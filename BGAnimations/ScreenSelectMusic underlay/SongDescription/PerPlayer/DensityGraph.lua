@@ -22,7 +22,7 @@ local af = Def.ActorFrame{
 		self:visible( GAMESTATE:IsHumanPlayer(player) )
 		self:xy(_screen.cx-182+nxXOffset, _screen.cy+23+nxYOffset)
 
-		if player == PLAYER_2 then
+		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
 			self:addx(width+36)
 		end
 
@@ -31,34 +31,11 @@ local af = Def.ActorFrame{
 		end
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
-		self:x(_screen.cx-182)
-		if #GAMESTATE:GetHumanPlayers() == 1 then 
-			self:y(_screen.cy+62)
-
-		else
-			self:y(_screen.cy+23)
-		end
-		if player == PLAYER_2 then
-			self:addy(height+24)
-		end
-
-		if IsUsingWideScreen() then
-			self:addx(-5)
-		end
 		if params.Player == player then
 			self:visible(true)
 		end
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
-		self:x(_screen.cx-182)
-		self:y(_screen.cy+62)
-		if player == PLAYER_2 then
-			self:addy(height+24)
-		end
-
-		if IsUsingWideScreen() then
-			self:addx(-5)
-		end
 		if params.Player == player then
 			self:visible(false)
 		end
@@ -135,7 +112,7 @@ af2[#af2+1] = NPS_Histogram(player, width, height)..{
 -- We do this in parent actorframe because we want to "stall" before we parse.
 af2[#af2]["CurrentSteps"..pn.."ChangedMessageCommand"] = nil
 
-local nxPeakXOffset = -10
+local nxPeakXOffset = 100
 local textZoom = 0.6;
 
 -- The Peak NPS text
@@ -144,58 +121,35 @@ af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 	Text="",
 	InitCommand=function(self)
 		self:horizalign(left):zoom(textZoom)
-		if player == PLAYER_1 then
-			self:addx(40+nxPeakXOffset):addy(-41)
+		if GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2 then
+			self:addx(-241+nxPeakXOffset):addy(-41)
 		else
-			self:addx(-131+nxPeakXOffset):addy(-41)
+			self:addx(40+nxPeakXOffset):addy(-41)
 		end
 		-- We want black text in Rainbow mode except during HolidayCheer(), white otherwise.
 		self:diffuse((ThemePrefs.Get("RainbowMode") and not HolidayCheer()) and {0, 0, 0, 1} or {1, 1, 1, 1})
 	end,
 	HideCommand=function(self)
-		if #GAMESTATE:GetHumanPlayers() == 1 then 
-			self:settext("Peak NPS: \nPeak eBPM: ")
-		else
-			self:settext("Peak NPS: ")
-		end
+		self:settext("Peak NPS: ")
 		self:visible(false)
 	end,
 	RedrawCommand=function(self)
 		if leaving_screen then return end
 		if SL[pn].Streams.PeakNPS ~= 0 then
 			local nps = SL[pn].Streams.PeakNPS * SL.Global.ActiveModifiers.MusicRate
-			if #GAMESTATE:GetHumanPlayers() == 1 then 
-				self:horizalign("left")
-				self:y(-50)
-				if player == PLAYER_1 then
-					self:x(60)
-				else					
-					self:x(-136)
-				end
-				self:settext(("Peak NPS: %.1f\nPeak eBPM: %.0f"):format(nps,nps*15))
-			else
-				self:horizalign("right")
-				self:y(-40)
-				if player == PLAYER_1 then 
-					self:x(140)
-				else
-					self:x(-55)
-				end
+				self:horizalign(((GAMESTATE:GetNumSidesJoined() == 2 and player == PLAYER_2) and left or right))
 				marquee_index = 0
 				text_table = {}
 				table.insert(text_table,("Peak NPS: %.1f"):format(nps))
 				table.insert(text_table,("Peak eBPM: %.1f"):format(nps*15))
 				self:finishtweening():playcommand("Marquee",{text_table=text_table})
-			end
 			self:visible(true)
 		end
 	end,
 	MarqueeCommand=function(self)
 		marquee_index = (marquee_index % #text_table) + 1
-		if #GAMESTATE:GetHumanPlayers() > 1 then 
 			self:settext(text_table[marquee_index])
 			self:sleep(2):queuecommand("Marquee")
-		end
 	end,
 	OffCommand=function(self)
 		leaving_screen = true
@@ -234,7 +188,6 @@ af2[#af2+1] = Def.ActorFrame{
 		Name="BreakdownText",
 		InitCommand=function(self)
 			local textHeight = 17
-			local textZoom = 0.8
 			self:maxwidth(width/textZoom):zoom(textZoom)
 		end,
 		HideCommand=function(self)
@@ -242,7 +195,6 @@ af2[#af2+1] = Def.ActorFrame{
 		end,
 		RedrawCommand=function(self)
 			if leaving_screen then return end
-			local textZoom = 0.8
 			breakdown_table = {}
 			marquee_index = 0
 			self:settext(GenerateBreakdownText(pn, 0))
@@ -269,7 +221,7 @@ af2[#af2+1] = Def.ActorFrame{
 	}
 }
 
-local patternInfoY = -20
+local patternInfoY = -18
 
 af2[#af2+1] = Def.ActorFrame{
 	Name="PatternInfo",
@@ -280,15 +232,6 @@ af2[#af2+1] = Def.ActorFrame{
 	end,
 	PlayerJoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)
-		if GAMESTATE:GetNumSidesJoined() == 2 then
-			self:y(patternInfoY)
-		else
-			if player == PLAYER_1 then
-				self:y(38 + 24)
-			else
-				self:y(-38 - 80)
-			end
-		end
 	end,
 	PlayerUnjoinedMessageCommand=function(self, params)
 		self:visible(GAMESTATE:GetNumSidesJoined() == 1)

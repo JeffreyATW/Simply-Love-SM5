@@ -159,46 +159,46 @@ af2[#af2+1] = Def.Quad {
 }
 
 -- Folder name
-af2[#af2+1] = LoadFont("Common Normal")..{
+af2[#af2+1] = LoadFont("_@fot-newrodin pro db 30px")..{
 	Name="Folder",
 	Text="",
 	FolderSummaryCommand=function(self,params)
 		self:settext(params.folderName)
 		self:y(-60)
-		self:zoom(2)
-		self:maxwidth(200)
+		self:zoom(1.1)
+		self:maxwidth(300)
 		
 		if IsNotWide then
-			self:zoom(1.5)
+			self:zoom(0.8)
 			self:y(-50)
 		end
 	end
 }
 
 -- Profile name
-af2[#af2+1] = LoadFont("Common Normal")..{
+af2[#af2+1] = LoadFont("_@fot-newrodin pro db 30px")..{
 	Name="ProfileName",
 	Text="",
 	FolderSummaryCommand=function(self,params)
 		self:settext(params.profileName)
 		self:y(-20)
-		self:zoom(2)
-		self:maxwidth(200)
+		self:zoom(1.1)
+		self:maxwidth(300)
 		if IsNotWide then
-			self:zoom(1.5)
+			self:zoom(0.8)
 		end
 	end
 }
 
 -- Total Song Count
-af2[#af2+1] = LoadFont("Common Normal")..{
+af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 	Name="TotalSongs",
 	Text="",
 	FolderSummaryCommand=function(self,params)
 		local text = "Total " .. difficultyNames[params.difficulty] .. ": " .. params.scores["Passes"] .. "/" .. params.countSongs
 		self:settext(text)
 		self:y(15)
-		self:zoom(1.25)
+		self:zoom(1)
 		if IsNotWide then
 			self:zoom(0.94)
 		end
@@ -208,7 +208,7 @@ af2[#af2+1] = LoadFont("Common Normal")..{
 -- Grades and grade count
 local columnWidth = IsNotWide and 75 or 100
 for i=1,4 do
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="Grade" ..i,
 		Text="",
 		FolderSummaryCommand=function(self,params)
@@ -216,7 +216,7 @@ for i=1,4 do
 			self:settext(text)
 			self:x(-220+columnWidth*i)
 			self:y(52)
-			self:zoom(1.4)
+			self:zoom(1)
 			if IsNotWide then
 				self:zoom(1.05)
 				self:x(-170+columnWidth*i)

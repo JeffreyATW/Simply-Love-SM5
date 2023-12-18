@@ -242,9 +242,9 @@ local GetScoresRequestProcessor = function(res, params)
 					loadingText:settext("No ITL Score"):diffuse(color("#21CCE8"))
 					SL["P"..i].itlScore = 0
 				elseif data[playerStr]["isRanked"] then
-					loadingText:settext("Loaded"):diffuse(Color.Black)
+					loadingText:settext("Loaded"):diffuse(Color.White)
 				else
-					loadingText:settext("Not Ranked"):diffuse(Color.Black)
+					loadingText:settext("Not Ranked"):diffuse(Color.White)
 				end
 			else
 				-- Just hide the text
@@ -341,7 +341,7 @@ af[#af+1] = RequestResponseActor(17, 50)..{
 					requestCacheKey = requestCacheKey .. SL[pn].Streams.Hash .. SL[pn].ApiKey .. pn
 					local loadingText = master:GetChild("PaneDisplayP"..i):GetChild("Loading")
 					loadingText:visible(true)
-					loadingText:settext("Loading ..."):diffuse(Color.Black)
+					loadingText:settext("Loading ..."):diffuse(Color.White)
 					sendRequest = true
 				end
 			end
@@ -517,7 +517,7 @@ for player in ivalues(PlayerNumber) do
 			-- We overload this actor to work both for GrooveStats and also offline.
 			-- If we're connected, we let the ResponseProcessor set the text
 			if IsServiceAllowed(SL.GrooveStats.GetScores) and ThemePrefs.Get("MusicWheelGS") == "Pane" then
-				self:settext("----"):diffuse(Color.Black)
+				self:settext("----"):diffuse(Color.White)
 			else
 				self:queuecommand("SetDefault")
 			end
@@ -525,7 +525,7 @@ for player in ivalues(PlayerNumber) do
 		SetDefaultCommand=function(self)
 			local SongOrCourse, StepsOrTrail = GetSongAndSteps(player)
 			local machineScore = GetScoreFromProfile(machine_profile, SongOrCourse, StepsOrTrail)
-			self:settext(machineScore and machineScore:GetName() or "----"):diffuse(Color.Black)
+			self:settext(machineScore and machineScore:GetName() or "----"):diffuse(Color.White)
 			DiffuseEmojis(self:ClearAttributes())
 		end
 	}
@@ -544,7 +544,7 @@ for player in ivalues(PlayerNumber) do
 			-- We overload this actor to work both for GrooveStats and also offline.
 			-- If we're connected, we let the ResponseProcessor set the text
 			if IsServiceAllowed(SL.GrooveStats.GetScores) and ThemePrefs.Get("MusicWheelGS") == "Pane" then
-				self:settext("??.??%"):diffuse(Color.Black)
+				self:settext("??.??%"):diffuse(Color.White)
 			else
 				self:queuecommand("SetDefault")
 			end
@@ -553,9 +553,9 @@ for player in ivalues(PlayerNumber) do
 			local SongOrCourse, StepsOrTrail = GetSongAndSteps(player)
 			local machineScore = GetScoreFromProfile(machine_profile, SongOrCourse, StepsOrTrail)
 			if machineScore ~= nil then
-				self:settext(FormatPercentScore(machineScore:GetPercentDP())):diffuse(Color.Black)
+				self:settext(FormatPercentScore(machineScore:GetPercentDP())):diffuse(Color.White)
 			else
-				self:settext("??.??%"):diffuse(Color.Black)
+				self:settext("??.??%"):diffuse(Color.White)
 			end
 		end
 	}
@@ -579,7 +579,7 @@ for player in ivalues(PlayerNumber) do
 		end,
 		SetDefaultCommand=function(self)
 			local playerScore = GetScoreForPlayer(player)
-			self:settext(playerScore and playerScore:GetName() or "----"):diffuse(Color.Black)
+			self:settext(playerScore and playerScore:GetName() or "----"):diffuse(Color.White)
 			DiffuseEmojis(self:ClearAttributes())
 		end
 	}
@@ -604,9 +604,9 @@ for player in ivalues(PlayerNumber) do
 		SetDefaultCommand=function(self)
 			local playerScore = GetScoreForPlayer(player)
 			if playerScore ~= nil then
-				self:settext(FormatPercentScore(playerScore:GetPercentDP())):diffuse(Color.Black)
+				self:settext(FormatPercentScore(playerScore:GetPercentDP())):diffuse(Color.White)
 			else
-				self:settext("??.??%"):diffuse(Color.Black)
+				self:settext("??.??%"):diffuse(Color.White)
 			end
 		end
 	}
