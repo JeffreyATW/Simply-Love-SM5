@@ -253,23 +253,22 @@ local function DrawDifListPlayershadowp1(pn,diff)
 			OffCommand=cmd(linear,0.25;diffusealpha,0;);
 			SetCommand=function(self)
 				if GAMESTATE:IsHumanPlayer(PLAYER_1) then
-				local st=GAMESTATE:GetCurrentStyle():GetStepsType();
-				local song=GAMESTATE:GetCurrentSong();
-				if song then
-					local currentSteps = GAMESTATE:GetCurrentSteps(pn)
-					if currentSteps and song:HasStepsTypeAndDifficulty(st,diff) and diff==currentSteps:GetDifficulty() then
-						self:diffusealpha(1);
-						self:y(GetDifListY(diff));
+					local st=GAMESTATE:GetCurrentStyle():GetStepsType();
+					local song=GAMESTATE:GetCurrentSong();
+					if song then
+						local currentSteps = GAMESTATE:GetCurrentSteps(pn)
+						if currentSteps and song:HasStepsTypeAndDifficulty(st,diff) and diff==currentSteps:GetDifficulty() then
+							self:diffusealpha(1);
+							self:y(GetDifListY(diff));
+						else
+							self:stopeffect();
+							self:diffusealpha(0);
+					end
 					else
-						self:stopeffect();
-						self:diffusealpha(0);
-				end
-				else
-						self:stopeffect();
-						self:diffusealpha(0);
+							self:stopeffect();
+							self:diffusealpha(0);
+					end;
 				end;
-				end
-
 			end;
 			CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
 			CurrentTrailP1ChangedMessageCommand=cmd(playcommand,"Set");
@@ -351,31 +350,31 @@ t[#t+1] = Def.BitmapText {
 		InitCommand=cmd(horizalign,left;x,SCREEN_CENTER_X-320;y,SCREEN_CENTER_Y-141;zoom,0.5;shadowlengthy,2;diffusealpha,0.5;),
 		OnCommand=function(self)
 			self:settext("Song Length:            BPM:                                     P1      P2")
-			end;	
-			BeginCommand=cmd(playcommand,"Set");
-			OffCommand=cmd(decelerate,0.25;diffusealpha,0;);
-			SetCommand=function(self)
-				self:diffuse(color("1,1,1,1"));
-				self:strokecolor(color("0.1,0.1,0.3,1"));
-				myScoreSet = TopRecord(PLAYER_1);
-				local temp = myScoreSet["topDate"];
-				if (myScoreSet["SongOrCourse"]==1) then
-					if (myScoreSet["HasScore"]==1) then
-						self:diffusealpha(0.5);
-					else
-						self:diffusealpha(0.5);
-					end
+		end;
+		BeginCommand=cmd(playcommand,"Set");
+		OffCommand=cmd(decelerate,0.25;diffusealpha,0;);
+		SetCommand=function(self)
+			self:diffuse(color("1,1,1,1"));
+			self:strokecolor(color("0.1,0.1,0.3,1"));
+			local pn = (GAMESTATE:GetNumSidesJoined() == 1 and GAMESTATE:IsPlayerEnabled(PLAYER_2)) and PLAYER_2 or PLAYER_1
+			myScoreSet = TopRecord(pn);
+			if (myScoreSet["SongOrCourse"]==1) then
+				if (myScoreSet["HasScore"]==1) then
+					self:diffusealpha(0.5);
 				else
-					self:diffusealpha(0);
+					self:diffusealpha(0.5);
 				end
-			end;
-			CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentTrailP1ChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentTrailP2ChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
-			CurrentCourseChangedMessageCommand=cmd(queuecommand,"Set");
-		};
+			else
+				self:diffusealpha(0);
+			end
+		end;
+		CurrentSongChangedMessageCommand=cmd(queuecommand,"Set");
+		CurrentTrailP1ChangedMessageCommand=cmd(queuecommand,"Set");
+		CurrentStepsP1ChangedMessageCommand=cmd(queuecommand,"Set");
+		CurrentTrailP2ChangedMessageCommand=cmd(queuecommand,"Set");
+		CurrentStepsP2ChangedMessageCommand=cmd(queuecommand,"Set");
+		CurrentCourseChangedMessageCommand=cmd(queuecommand,"Set");
+};
 
 t[#t+1] = StandardDecorationFromFileOptional("ShockArrowDisplayP1","ShockArrowDisplayP1") .. {
 	InitCommand = cmd(x,SCREEN_CENTER_X-122+1000;draworder,5;y,SCREEN_CENTER_Y-171;zoom,0.6;);
@@ -417,11 +416,10 @@ t[#t+1] = StandardDecorationFromFileOptional("SongTime","SongTime") .. {
 				length = 0.0;
 				self:playcommand("Reset");
 			end;
-							myScoreSet = TopRecord(PLAYER_1);
-				local temp = myScoreSet["topDate"];
+			local pn = (GAMESTATE:GetNumSidesJoined() == 1 and GAMESTATE:IsPlayerEnabled(PLAYER_2)) and PLAYER_2 or PLAYER_1
+				myScoreSet = TopRecord(pn);
 				if (myScoreSet["SongOrCourse"]==1) then
 					if (myScoreSet["HasScore"]==1) then
-						self:settext( temp);
 						self:diffusealpha(1);
 					else
 						self:diffusealpha(1);
@@ -444,8 +442,8 @@ t[#t+1] = StandardDecorationFromFileOptional("BPMDisplay","BPMDisplay")..{
 	InitCommand = cmd(x,SCREEN_CENTER_X-170;y,SCREEN_CENTER_Y-141;zoom,0.5;);
 	OffCommand = cmd(diffusealpha,0;);
 	SetCommand=function(self)
-								myScoreSet = TopRecord(PLAYER_1);
-				local temp = myScoreSet["topDate"];
+		local pn = (GAMESTATE:GetNumSidesJoined() == 1 and GAMESTATE:IsPlayerEnabled(PLAYER_2)) and PLAYER_2 or PLAYER_1
+								myScoreSet = TopRecord(pn);
 				if (myScoreSet["SongOrCourse"]==1) then
 					if (myScoreSet["HasScore"]==1) then
 						self:diffusealpha(1);
