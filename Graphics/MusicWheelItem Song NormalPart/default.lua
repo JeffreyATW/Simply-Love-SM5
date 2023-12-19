@@ -5,6 +5,16 @@ local song;
 local group;
 --main backing
 
+local function ScaleToCrop(banner)
+	banner:scaletocover(-240, -30, -180, 30);
+	local zoomedWidth = banner:GetWidth() * banner:GetZoom();
+	local sideCrop = ((zoomedWidth - 60) / zoomedWidth) / 2;
+
+	banner:cropright(sideCrop);
+	banner:cropleft(sideCrop);
+	-- banner:y(0):x(-210)
+end
+
 local t = Def.ActorFrame {
 	-- Fallback banner in case one isn't available.
 	-- Def.Sprite {
@@ -66,7 +76,9 @@ local t = Def.ActorFrame {
 		Name="Banner";
 		InitCommand=cmd(scaletoclipped,60,60;x,-210);
 		BackgroundCommand=cmd(scaletoclipped,60,60);
-		BannerCommand=cmd(scaletoclipped,60,60);
+		BannerCommand=function(self)
+			ScaleToCrop(self)
+		end;
 		JacketCommand=cmd(scaletoclipped,60,60);
 		SetMessageCommand=function(self,params)
 			local Song = params.Song;
