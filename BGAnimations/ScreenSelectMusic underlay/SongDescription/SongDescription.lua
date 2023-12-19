@@ -577,6 +577,7 @@ t[#t+1] = Def.ActorFrame { --song jacket
 					self:Load(THEME:GetPathG("","Common fallback jacket"));					
 				end;
 				if bannerOnly then
+					self:cropleft(0):cropright(0);
 					self:scaletofit(-65, -65, 65, 65);
 				else
 					local zoomedWidth = ScaleToCrop(self)
