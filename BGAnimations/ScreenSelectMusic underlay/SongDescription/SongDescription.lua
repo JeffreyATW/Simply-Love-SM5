@@ -385,11 +385,6 @@ t[#t+1] = Def.BitmapText {
 		CurrentCourseChangedMessageCommand=cmd(queuecommand,"Set");
 };
 
-t[#t+1] = StandardDecorationFromFileOptional("ShockArrowDisplayP1","ShockArrowDisplayP1") .. {
-	InitCommand = cmd(x,SCREEN_CENTER_X-122+1000;draworder,5;y,SCREEN_CENTER_Y-171;zoom,0.6;);
-	OffCommand = cmd(linear,0.25;diffusealpha,0;);
-};
-
 t[#t+1] = StandardDecorationFromFileOptional("SongTime","SongTime") .. {
 	InitCommand = cmd(x,SCREEN_CENTER_X-240;y,SCREEN_CENTER_Y-141;zoom,0.5;);
 	OffCommand = cmd(diffusealpha,0;);
