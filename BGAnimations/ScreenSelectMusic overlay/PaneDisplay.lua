@@ -612,7 +612,7 @@ for player in ivalues(PlayerNumber) do
 	}
 	
 	-- Player Profile Combo Check
-	af2[#af2+1] = LoadFont("Common Normal")..{
+	af2[#af2+1] = LoadFont("_@fot-newrodin pro db 20px")..{
 		Name="PlayerCombo",
 		InitCommand=function(self)
 			self:zoom(text_zoom+0.2):horizalign(right):rotationz(-30)
@@ -681,7 +681,7 @@ for player in ivalues(PlayerNumber) do
 		Name="DifficultyMeter",
 		InitCommand=function(self)
 			self:horizalign(right):diffuse(Color.White)
-			self:xy(pos.col[4] + 5, pos.row[2] + 5)
+			self:xy(pos.col[4] + 5, pos.row[2] + 3)
 			if not IsUsingWideScreen() then self:maxwidth(66) end
 			self:queuecommand("Set")
 		end,

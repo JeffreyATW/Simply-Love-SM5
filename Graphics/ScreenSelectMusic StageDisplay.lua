@@ -8,11 +8,11 @@ local smallZoom = 0.5
 
 t[#t+1] = Def.ActorFrame {
 		Def.Quad{
-			InitCommand=cmd(diffuse,color("#000000");zoomto,100,30;);
+			InitCommand=cmd(diffuse,color("#000000");zoomto,100,30;y,4);
 			OnCommand=cmd(diffusealpha,0.4;fadeleft,0.2;faderight,0.2;);
 		};
 	LoadFont("_@fot-newrodin pro db 20px") .. {
-		InitCommand=cmd(y,-1;shadowlength,1;zoom,bigZoom;strokecolor,color("#000000"));
+		InitCommand=cmd(y,4;shadowlength,1;zoom,bigZoom;strokecolor,color("#000000"));
 		BeginCommand=function(self)
 			local top = SCREENMAN:GetTopScreen()
 			if top then
