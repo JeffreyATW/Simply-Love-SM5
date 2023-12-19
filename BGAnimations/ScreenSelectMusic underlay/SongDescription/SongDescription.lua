@@ -542,7 +542,7 @@ t[#t+1] = Def.ActorFrame { --song banner background
 					self:scaletocover(-65, -65, 65, 65);
 				end
 			end
-			self:diffusealpha(hasBanner and 0.5 or 0);
+			self:diffusealpha(hasBanner and 0.75 or 0);
 			self:stoptweening();
 		end;
 		CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
