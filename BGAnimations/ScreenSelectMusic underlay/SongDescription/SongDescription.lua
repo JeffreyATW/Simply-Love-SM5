@@ -475,6 +475,8 @@ local function ScaleToCrop(jacket)
 	return zoomedWidth;
 end
 
+local blurFactor = 12;
+
 t[#t+1] = Def.ActorFrame { --song banner background
 	InitCommand=JacketInitCommand;
 	OffCommand=JacketOffCommand;
@@ -508,16 +510,16 @@ t[#t+1] = Def.ActorFrame { --song banner background
 	Def.ActorFrameTexture{
 		InitCommand=function(self)
 			self:SetTextureName( "ScreenPixel" )
-			self:SetWidth(130/4);
-			self:SetHeight(130/4);
+			self:SetWidth(130/blurFactor);
+			self:SetHeight(130/blurFactor);
 			self:Create();
 		end;
 		Def.Sprite{
 			Texture = "ScreenTex";
 			OnCommand = function(self)
-				self:y(16.25)
-				self:x(16.25+.5)
-				self:zoom(0.25)
+				self:y((130 / blurFactor) / 2)
+				self:x((130 / blurFactor) / 2 +.5)
+				self:zoom(1/blurFactor)
 			end,
 		}
 	},
@@ -525,9 +527,9 @@ t[#t+1] = Def.ActorFrame { --song banner background
 	Def.Sprite{
 		Texture = "ScreenPixel";
 		OnCommand = function(self)
-			self:SetHeight(32.5)
-			self:SetWidth(32.5)
-			self:zoom(4)
+			self:SetHeight(130 / blurFactor)
+			self:SetWidth(130 / blurFactor)
+			self:zoom(blurFactor)
 		end,
 	};
 	Def.Quad {
@@ -542,7 +544,7 @@ t[#t+1] = Def.ActorFrame { --song banner background
 					self:scaletocover(-65, -65, 65, 65);
 				end
 			end
-			self:diffusealpha(hasBanner and 0.75 or 0);
+			self:diffusealpha(hasBanner and 0.667 or 0);
 			self:stoptweening();
 		end;
 		CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
