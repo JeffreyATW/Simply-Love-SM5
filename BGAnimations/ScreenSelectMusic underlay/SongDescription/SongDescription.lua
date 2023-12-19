@@ -464,8 +464,6 @@ t[#t+1] = StandardDecorationFromFileOptional("BPMDisplay","BPMDisplay")..{
 	CurrentTrailP2ChangedMessageCommand=cmd(playcommand,"Set");
 };
 
-local count = 0;
-
 t[#t+1] = Def.ActorFrame { --song jacket
  	InitCommand=cmd(zoom,2;x,SCREEN_CENTER_X-470;y,SCREEN_CENTER_Y-73;diffusealpha,1;draworder,1;diffusealpha,0;linear,0.5;diffusealpha,1;);
 	OffCommand=cmd(linear,0.25;diffusealpha,0;);
