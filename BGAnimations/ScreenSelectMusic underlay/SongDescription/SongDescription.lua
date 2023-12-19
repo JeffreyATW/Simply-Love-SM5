@@ -306,47 +306,40 @@ t[#t+1] = Def.ActorFrame {
 					elseif song:HasBackground() then
 						self:diffusealpha(1);
 						self:LoadFromCached("background",song:GetBackgroundPath())
+					elseif song:HasBanner() then
+						self:diffusealpha(1);
+						self:LoadFromCached("banner",song:GetBannerPath())
 					else
 						self:Load(THEME:GetPathG("","Common fallback jacket"));
 					end;
-				elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
-				and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
-					local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
-					if not GAMESTATE:GetCurrentSong() then
-						myLoadGroupJacket(selgrp, self);
-						self:stoptweening();
-					else
-						self:Load(THEME:GetPathG("","Common fallback jacket"));
-						self:stoptweening();							
-					end;
-			else
+				else
 					self:diffusealpha(1);
 					self:Load(THEME:GetPathG("","Common fallback jacket"));					
-			end;
-			self:scaletocover(0, 0, 130, 130);
-			local zoomedWidth = self:GetWidth() * self:GetZoom();
-			local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+				end;
+				self:scaletocover(0, 0, 130, 130);
+				local zoomedWidth = self:GetWidth() * self:GetZoom();
+				local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
 
-			self:cropright(sideCrop);
-			self:cropleft(sideCrop);
-			self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
-			self:croptop(0.274);
-			self:cropbottom(0.271);
-			self:faderight(0.5);
-			self:fadeleft(0.5)	
-		else
-			local course = GAMESTATE:GetCurrentCourse();
-			if course then
-				self:x(SCREEN_CENTER_X+0);
-				self:LoadFromCourse(GAMESTATE:GetCurrentCourse());
-						self:zoomtowidth(304);
-						self:zoomtoheight(304);				
+				self:cropright(sideCrop);
+				self:cropleft(sideCrop);
+				self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
+				self:croptop(0.274);
+				self:cropbottom(0.271);
+				self:faderight(0.5);
+				self:fadeleft(0.5)	
+			else
+				local course = GAMESTATE:GetCurrentCourse();
+				if course then
+					self:x(SCREEN_CENTER_X+0);
+					self:LoadFromCourse(GAMESTATE:GetCurrentCourse());
+							self:zoomtowidth(304);
+							self:zoomtoheight(304);				
+				end;
 			end;
-		end;
-		self:stoptweening();
+			self:stoptweening();
 		end;
 		CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
-		};
+	};
 };
 
 t[#t+1]=LoadActor("songtitlebg")..{
@@ -464,45 +457,131 @@ t[#t+1] = StandardDecorationFromFileOptional("BPMDisplay","BPMDisplay")..{
 	CurrentTrailP2ChangedMessageCommand=cmd(playcommand,"Set");
 };
 
+local function OnlyHasBanner(song)
+	return song ~= nil and song:HasBanner() and not song:HasJacket() and not song:HasBackground()
+end
+
+local JacketInitCommand=cmd(zoom,2;x,SCREEN_CENTER_X-470;y,SCREEN_CENTER_Y-73;diffusealpha,1;draworder,1;diffusealpha,0;linear,0.5;diffusealpha,1;);
+local JacketOffCommand=cmd(linear,0.25;diffusealpha,0;);
+local JacketBannerOnCommand=cmd(ztest,false;);
+
+local function ScaleToCrop(jacket)
+	jacket:scaletocover(0, 0, 130, 130);
+	local zoomedWidth = jacket:GetWidth() * jacket:GetZoom();
+	local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+
+	jacket:cropright(sideCrop);
+	jacket:cropleft(sideCrop);
+	return zoomedWidth;
+end
+
+t[#t+1] = Def.ActorFrame { --song banner background
+	InitCommand=JacketInitCommand;
+	OffCommand=JacketOffCommand;
+		
+	Def.ActorFrameTexture{
+		InitCommand=function(self)
+			self:SetTextureName( "ScreenTex" )
+			self:SetWidth(130);
+			self:SetHeight(130);
+			self:Create();
+		end;
+		Def.Banner {
+			Name="BannerBG";
+			OnCommand=JacketBannerOnCommand;
+			SetCommand=function(self)
+				local hasBanner = false
+				if not GAMESTATE:IsCourseMode() then
+					local song = GAMESTATE:GetCurrentSong()
+					if OnlyHasBanner(song) then
+						hasBanner = true
+						self:LoadFromCached("banner",song:GetBannerPath())
+						ScaleToCrop(self)
+					end
+				end
+				self:diffusealpha(hasBanner and 1 or 0);
+				self:stoptweening();
+			end;
+			CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
+		};
+	},
+	Def.ActorFrameTexture{
+		InitCommand=function(self)
+			self:SetTextureName( "ScreenPixel" )
+			self:SetWidth(130/4);
+			self:SetHeight(130/4);
+			self:Create();
+		end;
+		Def.Sprite{
+			Texture = "ScreenTex";
+			OnCommand = function(self)
+				self:y(16.25)
+				self:x(16.25+.5)
+				self:zoom(0.25)
+			end,
+		}
+	},
+	
+	Def.Sprite{
+		Texture = "ScreenPixel";
+		OnCommand = function(self)
+			self:SetHeight(32.5)
+			self:SetWidth(32.5)
+			self:zoom(4)
+		end,
+	};
+	Def.Quad {
+		OnCommand=JacketBannerOnCommand;
+		SetCommand=function(self)
+			local hasBanner = false
+			if not GAMESTATE:IsCourseMode() then
+				local song = GAMESTATE:GetCurrentSong()
+				if OnlyHasBanner(song) then
+					hasBanner = true
+					self:diffuse(Color.Black);
+					self:scaletocover(-65, -65, 65, 65);
+				end
+			end
+			self:diffusealpha(hasBanner and 0.5 or 0);
+			self:stoptweening();
+		end;
+		CurrentSongChangedMessageCommand=cmd(playcommand,"Set");
+	};
+};
+
 t[#t+1] = Def.ActorFrame { --song jacket
- 	InitCommand=cmd(zoom,2;x,SCREEN_CENTER_X-470;y,SCREEN_CENTER_Y-73;diffusealpha,1;draworder,1;diffusealpha,0;linear,0.5;diffusealpha,1;);
-	OffCommand=cmd(linear,0.25;diffusealpha,0;);
+ 	InitCommand=JacketInitCommand;
+	OffCommand=JacketOffCommand;
 	Def.Banner {
-		OnCommand=cmd(ztest,false;);
+		OnCommand=JacketBannerOnCommand;
 		SetCommand=function(self)
 			if not GAMESTATE:IsCourseMode() then
-			local song = GAMESTATE:GetCurrentSong();
-					if song then
-						if song:HasJacket() then
-							self:diffusealpha(1);
-							self:LoadBackground(song:GetJacketPath());
-						elseif song:HasBackground() then
-							self:diffusealpha(1);
-							self:LoadFromCached("background",song:GetBackgroundPath())
-						else
-							self:Load(THEME:GetPathG("","Common fallback jacket"));
-						end;
-					elseif SCREENMAN:GetTopScreen():GetNextScreenName()=="ScreenStageInformation" 
-					and SCREENMAN:GetTopScreen():GetPrevScreenName()~="ScreenSelectMusic" then
-							local selgrp =SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
-							if not GAMESTATE:GetCurrentSong() then
-								myLoadGroupJacket(selgrp, self);
-								self:stoptweening();
-							else
-								self:Load(THEME:GetPathG("","Common fallback jacket"));
-								self:stoptweening();							
-							end;
+				local song = GAMESTATE:GetCurrentSong();
+				local bannerOnly = false;
+				if song then
+					if song:HasJacket() then
+						self:diffusealpha(1);
+						self:LoadBackground(song:GetJacketPath());
+					elseif song:HasBackground() then
+						self:diffusealpha(1);
+						self:LoadFromCached("background",song:GetBackgroundPath())
+					elseif OnlyHasBanner(song) then
+						bannerOnly = true;
+						self:diffusealpha(1);
+						self:LoadFromCached("banner",song:GetBannerPath())
 					else
-							self:diffusealpha(1);
-							self:Load(THEME:GetPathG("","Common fallback jacket"));					
+						self:Load(THEME:GetPathG("","Common fallback jacket"));
 					end;
-					self:scaletocover(0, 0, 130, 130);
-					local zoomedWidth = self:GetWidth() * self:GetZoom();
-					local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
-
-					self:cropright(sideCrop);
-					self:cropleft(sideCrop);
+				else
+					self:diffusealpha(1);
+					self:Load(THEME:GetPathG("","Common fallback jacket"));					
+				end;
+				if bannerOnly then
+					self:scaletofit(-65, -65, 65, 65);
+				else
+					local zoomedWidth = ScaleToCrop(self)
 					self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
+				end
 			else
 				local course = GAMESTATE:GetCurrentCourse();
 				if course then

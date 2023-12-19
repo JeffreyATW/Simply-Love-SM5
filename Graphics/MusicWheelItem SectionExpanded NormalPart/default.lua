@@ -17,7 +17,6 @@ Def.Banner {
 		InitCommand=cmd(scaletoclipped,60,60;x,-235;);
 		SetMessageCommand=function(self,params)
 					group = params.Text;
-		local so = GAMESTATE:GetSortOrder();
 			if group then
 				
 					self:LoadFromSongGroup(group);
