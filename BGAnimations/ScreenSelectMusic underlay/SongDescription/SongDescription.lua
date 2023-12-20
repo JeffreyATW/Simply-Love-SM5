@@ -287,6 +287,8 @@ local function DrawDifListPlayershadowp1(pn,diff)
 	return f;
 end;
 
+local jacketSize = 130
+
 local t = Def.ActorFrame {};
 
 if not GAMESTATE:IsCourseMode() then
@@ -314,15 +316,21 @@ t[#t+1] = Def.ActorFrame {
 					end;
 				else
 					self:diffusealpha(1);
-					self:Load(THEME:GetPathG("","Common fallback jacket"));					
+					section = SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+					local bannerPath = SONGMAN:GetSongGroupBannerPath(section)
+					if bannerPath ~= "" then
+						self:LoadFromCached("banner",bannerPath)
+					else
+						self:Load(THEME:GetPathG("","Common fallback jacket"));					
+					end
 				end;
-				self:scaletocover(0, 0, 130, 130);
+				self:scaletocover(0, 0, jacketSize, jacketSize);
 				local zoomedWidth = self:GetWidth() * self:GetZoom();
-				local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+				local sideCrop = ((zoomedWidth - jacketSize) / zoomedWidth) / 2;
 
 				self:cropright(sideCrop);
 				self:cropleft(sideCrop);
-				self:scaletofit(zoomedWidth / -2, -65, zoomedWidth / 2, 65);
+				self:scaletofit(zoomedWidth / -2, -jacketSize / 2, zoomedWidth / 2, jacketSize / 2);
 				self:croptop(0.274);
 				self:cropbottom(0.271);
 				self:faderight(0.5);
@@ -465,17 +473,17 @@ local JacketInitCommand=cmd(zoom,2;x,SCREEN_CENTER_X-470;y,SCREEN_CENTER_Y-73;di
 local JacketOffCommand=cmd(linear,0.25;diffusealpha,0;);
 local JacketBannerOnCommand=cmd(ztest,false;);
 
+local blurFactor = 12;
+
 local function ScaleToCrop(jacket)
-	jacket:scaletocover(0, 0, 130, 130);
+	jacket:scaletocover(0, 0, jacketSize, jacketSize);
 	local zoomedWidth = jacket:GetWidth() * jacket:GetZoom();
-	local sideCrop = ((zoomedWidth - 130) / zoomedWidth) / 2;
+	local sideCrop = ((zoomedWidth - jacketSize) / zoomedWidth) / 2;
 
 	jacket:cropright(sideCrop);
 	jacket:cropleft(sideCrop);
 	return zoomedWidth;
 end
-
-local blurFactor = 12;
 
 t[#t+1] = Def.ActorFrame { --song banner background
 	InitCommand=JacketInitCommand;
@@ -484,8 +492,8 @@ t[#t+1] = Def.ActorFrame { --song banner background
 	Def.ActorFrameTexture{
 		InitCommand=function(self)
 			self:SetTextureName( "ScreenTex" )
-			self:SetWidth(130);
-			self:SetHeight(130);
+			self:SetWidth(jacketSize);
+			self:SetHeight(jacketSize);
 			self:Create();
 		end;
 		Def.Banner {
@@ -497,8 +505,16 @@ t[#t+1] = Def.ActorFrame { --song banner background
 					local song = GAMESTATE:GetCurrentSong()
 					if OnlyHasBanner(song) then
 						hasBanner = true
-						self:LoadFromCached("banner",song:GetBannerPath())
 						ScaleToCrop(self)
+						self:LoadFromCached("banner",song:GetBannerPath())
+					else
+						section = SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+						local bannerPath = SONGMAN:GetSongGroupBannerPath(section)
+						if bannerPath ~= "" then
+							hasBanner = true
+							ScaleToCrop(self)
+							self:LoadFromCached("banner",bannerPath)
+						end
 					end
 				end
 				self:diffusealpha(hasBanner and 1 or 0);
@@ -510,15 +526,15 @@ t[#t+1] = Def.ActorFrame { --song banner background
 	Def.ActorFrameTexture{
 		InitCommand=function(self)
 			self:SetTextureName( "ScreenPixel" )
-			self:SetWidth(130/blurFactor);
-			self:SetHeight(130/blurFactor);
+			self:SetWidth(jacketSize/blurFactor);
+			self:SetHeight(jacketSize/blurFactor);
 			self:Create();
 		end;
 		Def.Sprite{
 			Texture = "ScreenTex";
 			OnCommand = function(self)
-				self:y((130 / blurFactor) / 2)
-				self:x((130 / blurFactor) / 2 +.5)
+				self:y((jacketSize / blurFactor) / 2)
+				self:x((jacketSize / blurFactor) / 2 +.5)
 				self:zoom(1/blurFactor)
 			end,
 		}
@@ -527,12 +543,16 @@ t[#t+1] = Def.ActorFrame { --song banner background
 	Def.Sprite{
 		Texture = "ScreenPixel";
 		OnCommand = function(self)
-			self:SetHeight(130 / blurFactor)
-			self:SetWidth(130 / blurFactor)
+			self:SetHeight(jacketSize / blurFactor)
+			self:SetWidth(jacketSize / blurFactor)
 			self:zoom(blurFactor)
 		end,
 	};
 	Def.Quad {
+		InitCommand=function(self)
+			self:diffuse(Color.Black);
+			self:scaletocover(-jacketSize / 2, -jacketSize / 2, jacketSize / 2, jacketSize / 2);
+		end;
 		OnCommand=JacketBannerOnCommand;
 		SetCommand=function(self)
 			local hasBanner = false
@@ -540,8 +560,12 @@ t[#t+1] = Def.ActorFrame { --song banner background
 				local song = GAMESTATE:GetCurrentSong()
 				if OnlyHasBanner(song) then
 					hasBanner = true
-					self:diffuse(Color.Black);
-					self:scaletocover(-65, -65, 65, 65);
+				else
+					section = SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+					local bannerPath = SONGMAN:GetSongGroupBannerPath(section)
+					if bannerPath ~= "" then
+						hasBanner = true
+					end
 				end
 			end
 			self:diffusealpha(hasBanner and 0.667 or 0);
@@ -569,14 +593,21 @@ t[#t+1] = Def.ActorFrame { --song jacket
 						self:LoadFromCached("background",song:GetBackgroundPath())
 					elseif OnlyHasBanner(song) then
 						bannerOnly = true;
-						self:diffusealpha(1);
 						self:LoadFromCached("banner",song:GetBannerPath())
 					else
+						self:diffusealpha(1);
 						self:Load(THEME:GetPathG("","Common fallback jacket"));
 					end;
 				else
 					self:diffusealpha(1);
-					self:Load(THEME:GetPathG("","Common fallback jacket"));					
+					local section = SCREENMAN:GetTopScreen():GetMusicWheel():GetSelectedSection();
+					local bannerPath = SONGMAN:GetSongGroupBannerPath(section)
+					if bannerPath ~= "" then
+						bannerOnly = true
+						self:LoadFromCached("banner",bannerPath);
+					else
+						self:Load(THEME:GetPathG("","Common fallback jacket"));
+					end
 				end;
 				if bannerOnly then
 					self:cropleft(0):cropright(0);
