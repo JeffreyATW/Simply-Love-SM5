@@ -242,7 +242,7 @@ SL = {
 	-- These judgment colors are used for text & numbers on dark backgrounds:
 	JudgmentColors = {
 		Casual = {
-			color("#21CCE8"),	-- blue
+			color("#FF00BE"),	-- blue
 			color("#e29c18"),	-- gold
 			color("#66c955"),	-- green
 			color("#b45cff"),	-- purple (greatly lightened)
@@ -250,7 +250,7 @@ SL = {
 			color("#ff3030")	-- red (slightly lightened)
 		},
 		ITG = {
-			color("#21CCE8"),	-- blue
+			color("#FF00BE"),	-- blue
 			color("#e29c18"),	-- gold
 			color("#66c955"),	-- green
 			color("#b45cff"),	-- purple (greatly lightened)
@@ -258,7 +258,7 @@ SL = {
 			color("#ff3030")	-- red (slightly lightened)
 		},
 		["FA+"] = {
-			color("#21CCE8"),	-- blue
+			color("#FF00BE"),	-- blue
 			color("#ffffff"),	-- white
 			color("#e29c18"),	-- gold
 			color("#66c955"),	-- green

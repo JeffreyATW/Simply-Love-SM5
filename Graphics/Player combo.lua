@@ -28,14 +28,14 @@ if SL.Global.GameMode == "FA+" then
 end
 
 local solidColors = {}
-solidColors.FullComboW1 = color("#21CCE8")
+solidColors.FullComboW1 = color("#FF00BE")
 solidColors.FullComboW2 = color("#e29c18")
 solidColors.FullComboW3 = color("#66c955")
 solidColors.FullComboW4 = color("#ffffff")
 
 if SL.Global.GameMode == "FA+" then
 	solidColors.FullComboW1 = color("1,0.2,0.406,1")
-	solidColors.FullComboW2 = color("#21CCE8")
+	solidColors.FullComboW2 = color("#FF00BE")
 	solidColors.FullComboW3 = color("#e29c18")
 	solidColors.FullComboW4 = color("#66c955")
 end

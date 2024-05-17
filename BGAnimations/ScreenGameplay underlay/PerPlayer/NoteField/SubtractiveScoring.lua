@@ -130,7 +130,7 @@ bmt.ExCountsChangedMessageCommand=function(self, params)
 		if mods.MiniIndicator == "SubtractiveScoring" then
 			if mods.MiniIndicatorColor == "Default" then
 				if 100-score >= 96 then
-					self:diffuse(color("#21CCE8"))
+					self:diffuse(color("#FF00BE"))
 				elseif 100-score >= 89 then
 					self:diffuse(color("#e29c18"))
 				elseif 100-score >= 80 then
@@ -145,7 +145,7 @@ bmt.ExCountsChangedMessageCommand=function(self, params)
 		elseif mods.MiniIndicator == "PredictiveScoring" then
 			if mods.MiniIndicatorColor == "Default" then
 				if 100-score >= 96 then
-					self:diffuse(color("#21CCE8"))
+					self:diffuse(color("#FF00BE"))
 				elseif 100-score >= 89 then
 					self:diffuse(color("#e29c18"))
 				elseif 100-score >= 80 then
@@ -163,7 +163,7 @@ bmt.ExCountsChangedMessageCommand=function(self, params)
 			local pace = math.floor((actual / possible) * 10000) / 100
 			if mods.MiniIndicatorColor == "Default" then
 				if pace >= 96 then
-					self:diffuse(color("#21CCE8"))
+					self:diffuse(color("#FF00BE"))
 				elseif pace >= 89 then
 					self:diffuse(color("#e29c18"))
 				elseif pace >= 80 then
@@ -284,7 +284,7 @@ bmt.SetScoreCommand=function(self, params)
 			if mods.MiniIndicator == "SubtractiveScoring" then
 				if mods.MiniIndicatorColor == "Default" then
 					if score >= 96 then
-						self:diffuse(color("#21CCE8"))
+						self:diffuse(color("#FF00BE"))
 					elseif score >= 89 then
 						self:diffuse(color("#e29c18"))
 					elseif score >= 80 then
@@ -299,7 +299,7 @@ bmt.SetScoreCommand=function(self, params)
 			elseif mods.MiniIndicator == "PredictiveScoring" then
 				if mods.MiniIndicatorColor == "Default" then
 					if score >= 96 then
-						self:diffuse(color("#21CCE8"))
+						self:diffuse(color("#FF00BE"))
 					elseif score >= 89 then
 						self:diffuse(color("#e29c18"))
 					elseif score >= 80 then
@@ -315,7 +315,7 @@ bmt.SetScoreCommand=function(self, params)
 				local pace = math.floor((actual_dp / current_possible_dp) * 10000) / 100
 				if mods.MiniIndicatorColor == "Default" then
 					if pace >= 96 then
-						self:diffuse(color("#21CCE8"))
+						self:diffuse(color("#FF00BE"))
 					elseif pace >= 89 then
 						self:diffuse(color("#e29c18"))
 					elseif pace >= 80 then
