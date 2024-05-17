@@ -183,7 +183,7 @@ local GetScoresRequestProcessor = function(res, params)
 							string.format("%.2f%%", gsEntry["score"]/100),
 							machineName,
 							machineScore,
-							"#21CCE8"
+							"#FF00BE"
 						)
 						worldRecordSet = true
 					end
@@ -196,7 +196,7 @@ local GetScoresRequestProcessor = function(res, params)
 							string.format("%.2f%%", gsEntry["score"]/100),
 							rivalName,
 							rivalScore,
-							"#21CCE8"
+							"#FF00BE"
 						)
 						rivalNum = rivalNum + 1
 					end
