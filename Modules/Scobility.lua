@@ -1,0 +1,733 @@
+--[[--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--
+-- Scobility in the Songwheel v0.3
+-- 
+-- Locally caches scobility spice values for the current year of ITL, then
+-- calculates the player's scobility coefficients, target scores, and
+-- potential RP gain based on their local ITL score table.
+-- Each music wheel item for an ITL2025 song that's been played will also be
+-- annotated with the target score and the potential RP gain available from
+-- reaching it.
+--
+-- This module targets Zmod 5.6.1+ (it repurposes the EX and points actors in
+-- the music wheel item).
+-- In order to use this module, you will need to update Save\Preferences.ini
+-- so that the HttpAllowHosts line includes an entry for scobility's API,
+-- scobility.azurewebsites.net, and ensure HttpEnabled is set to 1 - e.g.,
+-- > HttpAllowHosts=*.groovestats.com,*.itgmania.com,scobility.azurewebsites.net
+-- > HttpEnabled=1
+--
+-- Copyright (c) 2025 Telperion
+--
+-- Permission to use, copy, modify, and/or distribute this software for any
+-- purpose with or without fee is hereby granted, provided that the above
+-- copyright notice and this permission notice appear in all copies.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+-- WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+-- MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+-- SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+-- WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+-- OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+-- CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--||--]]--
+local t = {}
+
+-- vvv Configurables vvv
+local SHOW_ALL_SONGS = true
+-- ^^^ Configurables ^^^
+
+local year = "2025"
+local spiceUpdateInProgress = false
+local spiceUpdateInterval = 3600    -- cache no more often than every hour
+local spiceLastUpdatedRelative = -spiceUpdateInterval
+local catalogName = "ITL" .. year
+local groupName = "ITL Online " .. year
+
+-- I wish these were stored themeside by ITL itself
+local superPathMap = {}
+local superHashMap = {}
+local diffMap = {}
+local styleMap = {}
+local titleMap = {}
+
+local coefs = {}
+local perfectOffset = 1.003
+
+local hands = {}
+local handSP = {
+    ["single"] = 75,
+    ["double"] = 50,
+}
+local handEP = {
+    ["single"] = {
+        [7] = 1,
+        [8] = 2,
+        [9] = 3,
+        [10] = 4,
+        [11] = 5,
+        [12] = 4,
+        [13] = 3,
+        [14] = 2,
+        [15] = 1,
+        [16] = 0,
+        [17] = 0,
+    },
+    ["double"] = {
+        [7] = 1,
+        [8] = 2,
+        [9] = 3,
+        [10] = 4,
+        [11] = 4,
+        [12] = 3,
+        [13] = 2,
+        [14] = 1,
+    },
+}
+
+local powBase = 40.0
+local inflect = 40.0
+local cutoffEP = 85.0
+local EX2SP = function(expct)
+    return (
+        100.0 * 
+        (math.pow(powBase, expct / inflect) - 1) /
+        (math.pow(powBase, 100.0 / inflect) - 1)
+    )
+end
+local SP2EX = function(sppct)
+    local century_scale = 100.0 / (math.pow(powBase, 100.0 / inflect) - 1)
+    return (
+        inflect *
+        math.log(sppct / century_scale + 1) /
+        math.log(powBase)
+    )
+end
+local EX2EP = function(expct)
+    local exClamp = (expct > cutoffEP) and (expct - cutoffEP) or 0
+    return (
+      (math.pow(100, exClamp / (100.0 - cutoffEP)) - 1) * (1000.0 / 99.0)
+    )
+end
+
+-- Least squares!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+local dumbassLSQComponents = function(a, b)
+    local s, s2, q, sq = 0, 0, 0, 0
+    for i, va in ipairs(a) do
+        local vb = b[i]
+        s = s + va
+        s2 = s2 + va * va
+        q = q + vb
+        sq = sq + va * vb
+    end
+    return #a, s, s2, q, sq
+end
+
+local dumbassLSQFree = function(a, b)
+    -- Plain ol' unanchored least squares best-fit.
+    local ones, s, s2, q, sq = dumbassLSQComponents(a, b)
+    local det = ones * s2 - s * s
+    local c1 = (-s * q + ones * sq) / det
+    local c0 = (s2 * q - s * sq) / det
+    local residual = 0
+    for i, va in ipairs(a) do
+        local vb = b[i]
+        local vr = vb - (c1 * va + c0)
+        residual = residual + vr * vr
+    end
+    return c0, c1, residual
+end
+
+local dumbassLSQWithCutPoint = function(a, b, anchor)
+    -- Plain' ol unanchored least squares best-fit
+    -- (but there's two of them!)
+    local a_l = {unpack(a, 1, anchor)}
+    local a_r = {unpack(a, anchor+1, #a)}
+    local b_l = {unpack(b, 1, anchor)}
+    local b_r = {unpack(b, anchor+1, #b)}
+    if (#a_l < 2) or (#a_r < 2) then return nil end
+
+    local c0_l, c1_l, res_l = dumbassLSQFree(a_l, b_l)
+    local c0_r, c1_r, res_r = dumbassLSQFree(a_r, b_r)
+    local horizon_spice = (c1_r - c1_l) / (c0_l - c0_r)
+    local horizon_quality = c1_l * horizon_spice + c0_l
+    local timing_power = (horizon_spice > 0) and c0_l or c0_r
+    return {
+        ["cut_point"] = anchor,
+        ["timing_power"] = timing_power,
+        ["horizon_spice"] = horizon_spice,
+        ["horizon_quality"] = horizon_quality,
+        ["mild_slope"] = c1_l,
+        ["hot_slope"] = c1_r,
+        ["residual"] = res_l + res_r
+    }
+end
+
+local dumbassLSQAnchored = function(a, b, anchor)
+    -- Solve a special condition of least-squares where a set of points is
+    -- broken up into two lines, and the X coordinate of the intersection is
+    -- fixed. This makes the independent variables the slopes of the two lines
+    -- and the Y coordinate of the intersection.
+    -- Here we're choosing the X coordinate as a[anchor].
+    local k = a[anchor]
+    local a_offset = {}
+    local ones = #a
+    local q = 0
+    for i, v in ipairs(a) do
+        a_offset[#a_offset+1] = v - k
+        q = q + b[i]
+    end
+    local a_l = {unpack(a_offset, 1, anchor)}
+    local a_r = {unpack(a_offset, anchor+1, #a)}
+    local b_l = {unpack(b, 1, anchor)}
+    local b_r = {unpack(b, anchor+1, #b)}
+    if (#a_l < 2) or (#a_r < 2) then return nil end
+
+    -- Borrow some of the calculations from the naive least squares method.
+    local ones_l, s_l, s2_l, q_l, sq_l = dumbassLSQComponents(a_l, b_l)
+    local ones_r, s_r, s2_r, q_r, sq_r = dumbassLSQComponents(a_r, b_r)
+
+    -- Special 3x3 symmetric matrix inversion
+    local m11 = ones * s2_r - s_r * s_r
+    local m12 = s_l * s_r
+    local m13 = -s_l * s2_r
+    local m22 = ones * s2_l - s_l * s_l
+    local m23 = -s2_l * s_r
+    local m33 = s2_l * s2_r
+    local det =
+        ones * s2_r * s2_l -
+        s_r * s_r * s2_l -
+        s_l * s_l * s2_r
+    -- Equivalent formulation of determinant
+    -- local det = m11*s2_l + m13*s_l
+
+    -- Evaluate the two slopes and the X coordinate at the anchor.
+    local c1_l = (m11 * sq_l + m12 * sq_r + m13 * q) / det
+    local c1_r = (m12 * sq_l + m22 * sq_r + m23 * q) / det
+    local c0 = (m13 * sq_l + m23 * sq_r + m33 * q) / det
+
+    local residual = 0
+    for i, va in ipairs(a_offset) do
+        local vb = b[i]
+        local c1_choice = (i < anchor) and c1_l or c1_r
+        local vr = (vb - (c1_choice * va + c0))
+        residual = residual + vr * vr
+    end
+
+    return {
+        ["c0"] = c0,
+        ["c1_l"] = c1_l,
+        ["c1_r"] = c1_r,
+        ["residual"] = residual,
+    }
+end
+
+-- Scobilitous piecewise least squares!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+-- Unga bunga!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+local spiceHorizonFit = function(a, b)
+    -- Requires independent variable to be sorted.
+    local best = nil
+    -- local best = {
+    --     ["cut_point"] = -1,
+    --     ["horizon_spice"] = 0,
+    --     ["horizon_quality"] = 0,
+    --     ["mild_slope"] = 0,
+    --     ["hot_slope"] = 0,
+    --     ["timing_power"] = 0,
+    --     ["residual"] = 0,
+    -- }
+
+    -- Don't unga bunga too close to the edges of the spice spread.
+    local horizon_centering = math.floor(math.sqrt(#a))
+
+    -- Test the fitness of the piecewise linear approximation between each
+    -- pair of spice values.
+    for j = (horizon_centering + 1), (#a - horizon_centering) do
+        -- Try fitting an unanchored dual least squares first.
+        -- If the intersection lands between this pair of spice values, it
+        -- automatically wins the optimization for this step of the DP algorithm.
+        local best_fit_here = dumbassLSQWithCutPoint(a, b, j)
+        if (not best_fit_here) or ((best_fit_here.horizon_spice < a[j]) or (best_fit_here.horizon_spice > a[j+1])) then
+            -- The intersection (a.k.a. spice horizon) didn't land between this
+            -- pair of spice values, so it can't satisfy the optimization constraint.
+            -- Let's evaluate what the best fits are on the boundaries and see which
+            -- wins among those two.
+            local best_fit_here_l = dumbassLSQAnchored(a, b, j)
+            local best_fit_here_r = dumbassLSQAnchored(a, b, j + 1)
+            if best_fit_here_l and best_fit_here_r then
+                if (best_fit_here_l.residual < best_fit_here_r.residual) then
+                    best_fit_here = {
+                        ["cut_point"] = j,
+                        ["horizon_spice"] = a[j],
+                        ["horizon_quality"] = best_fit_here_l.c0,
+                        ["mild_slope"] = best_fit_here_l.c1_l,
+                        ["hot_slope"] = best_fit_here_l.c1_r,
+                        ["timing_power"] = best_fit_here_l.c0 - best_fit_here_l.c1_l * a[j],
+                        ["residual"] = best_fit_here_l.residual,
+                    }
+                else
+                    best_fit_here = {
+                        ["cut_point"] = j,
+                        ["horizon_spice"] = a[j + 1],
+                        ["horizon_quality"] = best_fit_here_r.c0,
+                        ["mild_slope"] = best_fit_here_r.c1_l,
+                        ["hot_slope"] = best_fit_here_r.c1_r,
+                        ["timing_power"] = best_fit_here_r.c0 - best_fit_here_r.c1_l * a[j + 1],
+                        ["residual"] = best_fit_here_r.residual,
+                    }
+                end
+            end
+        end
+
+        if best_fit_here and ((not best) or (best_fit_here.residual < best.residual)) then
+            best = best_fit_here
+        end
+    end
+    return best
+end
+
+local CalculatePlayerData = function(player)
+    if not GAMESTATE:GetCurrentStyle() then return end
+    if not SL.Global.spice then return end
+
+    local currentStyle = GAMESTATE:GetCurrentStyle():GetName()
+    if currentStyle ~= "double" then currentStyle = "single" end
+    if PROFILEMAN:IsPersistentProfile(player) then
+        local pn = ToEnumShortString(player)
+        local pathMap = SL[pn].ITLData["pathMap"]
+        local hashMap = SL[pn].ITLData["hashMap"]
+
+        -- lol yikes
+        for path, hash in pairs(pathMap) do
+            local arr = split("/", path)
+            local songSubPath = arr[3] .. "/" .. arr[4]
+            local song = SONGMAN:FindSong(songSubPath)
+            if song then
+            end
+        end
+
+        local spicePoints = {}
+        local spiceList = {}
+        local qualityList = {}
+        local handAccumulator = {[-1] = {}}
+        for handDiff, handSize in pairs(handEP[currentStyle]) do
+            handAccumulator[handDiff] = {}
+        end
+        
+        for hash, data in pairs(hashMap) do
+            if diffMap[hash] and styleMap[hash] and styleMap[hash] == currentStyle then
+                -- TRICKY: calculate scobility curves only from passed chart data points
+                -- (but there's no need to restrict later calculations to passed charts)
+                if data["clearType"] > 0 and SL.Global.spice[hash] then
+                    spicePoints[#spicePoints+1] = {
+                        ["spice"] = math.log(SL.Global.spice[hash]["spice"]) / math.log(2),
+                        ["quality"] = (
+                            math.log(SL.Global.spice[hash]["spice"]) -
+                            math.log(perfectOffset - data["ex"] * 0.0001)
+                        ) / math.log(2)
+                    }
+                end
+                local currentSP = data["passingPoints"] + data["maxScoringPoints"] * EX2SP(data["ex"] * 0.01) * 0.01
+                local diff = diffMap[hash]
+                handAccumulator[-1][#handAccumulator[-1]+1] = {
+                    ["hash"] = hash,
+                    ["value"] = currentSP
+                }
+                handAccumulator[diff][#handAccumulator[diff]+1] = {
+                    ["hash"] = hash,
+                    ["value"] = data["ex"] * 0.01
+                }
+            end
+        end
+        table.sort(spicePoints, function(a, b) return a["spice"] < b["spice"] end)
+        for spicePoint in ivalues(spicePoints) do
+            spiceList[#spiceList+1] = spicePoint["spice"]
+            qualityList[#qualityList+1] = spicePoint["quality"]
+        end
+        Trace("Sample points: "..tostring(#spiceList))
+
+        coefs[pn] = spiceHorizonFit(spiceList, qualityList)
+        hands[pn] = {
+            ["SP"] = {},
+            ["EP"] = {}
+        }
+        Trace(TableToString(coefs[pn]))
+
+        for handDiff, handContents in pairs(handAccumulator) do
+            table.sort(handContents, function(a, b) return a["value"] > b["value"] end)
+            if handDiff == -1 then
+                hands[pn]["SP"] = {unpack(handContents, 1, handSP[currentStyle])}
+            else
+                hands[pn]["EP"][handDiff] = {unpack(handContents, 1, handEP[currentStyle][handDiff])}
+            end
+        end
+
+        SM("scobility: Calculated scobility coefficients for " .. PROFILEMAN:GetPlayerName(player))
+    end
+end
+
+-- unfortunately "IsItlSong" is already taken :(
+local IsThisSongITL = function(song)
+    local songPath = song:GetSongDir()
+    local group = string.lower(song:GetGroupName())
+    return (string.find(group, "itl online "..year) or 
+        string.find(group, "itl "..year) or 
+        superPathMap[songPath] ~= nil)
+end
+
+local EvaluateScobilityFit = function(player, s)
+    local pn = ToEnumShortString(player)
+    if not coefs[pn] then return nil end
+
+    if s <= coefs[pn].horizon_spice then
+      return coefs[pn].mild_slope * (s - coefs[pn].horizon_spice) + coefs[pn].horizon_quality
+    else
+      return coefs[pn].hot_slope * (s - coefs[pn].horizon_spice) + coefs[pn].horizon_quality
+    end
+end
+
+local EvaluateChartForPlayer = function(player, song, chartHash)
+    if not SL.Global.spice then return nil end
+    
+    local pn = ToEnumShortString(player)
+    local currentStyle = GAMESTATE:GetCurrentStyle():GetName()
+
+    if not coefs[pn] then return nil end
+
+    local pathMap = SL[pn].ITLData["pathMap"]
+    local hashMap = SL[pn].ITLData["hashMap"]
+
+    local hash = chartHash
+    if not hash then
+        local songPath = song:GetSongDir()
+        hash = pathMap[songPath]
+    end
+    if not hash then return nil end
+    if not SL.Global.spice[hash] then return nil end
+    if not diffMap[hash] then return nil end
+    if not styleMap[hash] then return nil end
+    if styleMap[hash] ~= currentStyle then return nil end
+    local s = math.log(SL.Global.spice[hash]["spice"]) / math.log(2)
+    local diff = diffMap[hash]
+
+    local qualityFit = EvaluateScobilityFit(player, s)
+    if not qualityFit then return nil end
+
+    local targetEX = 100.0 * (perfectOffset - math.pow(2, s - qualityFit))
+    if targetEX > 100 then
+        targetEX = 100
+    elseif targetEX < 0 then
+        targetEX = 0
+    else
+        targetEX = math.floor(targetEX * 100 + 0.5) * 0.01
+    end
+
+    local currentEX = 0
+    local currentSP = 0
+    local currentEP = 0
+    local potentialSP = 0
+    local potentialEP = 0
+    if hashMap[hash] and hashMap[hash]["ex"] then
+        currentEX = hashMap[hash]["ex"] * 0.01
+        if hashMap[hash]["clearType"] > 0 then
+            currentSP = math.floor(hashMap[hash]["passingPoints"] + hashMap[hash]["maxScoringPoints"] * EX2SP(currentEX) * 0.01)
+            currentEP = (hashMap[hash]["ex"] == 10000) and 1000 or math.floor(EX2EP(currentEX))
+        end
+    end
+    local targetSP = math.floor(superHashMap[hash]["passingPoints"] + superHashMap[hash]["maxScoringPoints"] * EX2SP(targetEX) * 0.01)
+    local targetEP = (targetEX == 100) and 1000 or math.floor(EX2EP(targetEX))
+    local contributorsSP = {}
+    local contributorsEP = {}
+    local floorSP = 1000000
+    local floorEPEX = 100
+    local alreadyContributesSP = false
+    local alreadyContributesEP = false
+    for topSP in ivalues(hands[pn]["SP"]) do
+        contributorsSP[#contributorsSP+1] = topSP["hash"]
+        floorSP = math.min(floorSP, topSP["value"])
+        if hash == topSP["hash"] then alreadyContributesSP = true end
+    end
+    if #hands[pn]["SP"] < handSP[currentStyle] then 
+        floorSP = 0
+    end
+    for topEP in ivalues(hands[pn]["EP"][diff]) do
+        contributorsEP[#contributorsEP+1] = topEP["hash"]
+        floorEPEX = math.min(floorEPEX, topEP["value"])
+        if hash == topEP["hash"] then alreadyContributesEP = true end
+    end
+    if #hands[pn]["EP"][diff] < handEP[currentStyle][diff] then 
+        floorEPEX = 0
+    end
+
+    if alreadyContributesSP then
+        potentialSP = targetSP - currentSP
+    else
+        potentialSP = targetSP - floorSP
+    end
+    if potentialSP < 0 then potentialSP = 0 end
+
+    if alreadyContributesEP then
+        potentialEP = targetEP - currentEP
+    else
+        potentialEP = targetEP - math.floor(EX2EP(floorEPEX))
+    end
+    if potentialEP < 0 then potentialEP = 0 end
+
+    return {
+        ["spice"] = math.log(SL.Global.spice[hash]["spice"]) / math.log(2),
+        ["quality"] = (
+            math.log(SL.Global.spice[hash]["spice"]) -
+            math.log(perfectOffset - currentEX * 0.01)
+        ) / math.log(2),
+        ["qualityFit"] = qualityFit,
+        ["currentEX"] = currentEX,
+        ["targetEX"] = targetEX,
+        ["floorEPEX"] = floorEPEX,
+        ["floorSP"] = floorSP,
+        ["currentSP"] = currentSP,
+        ["currentEP"] = currentEP,
+        ["currentRP"] = currentSP + currentEP,
+        ["targetSP"] = targetSP,
+        ["targetEP"] = targetEP,
+        ["targetRP"] = targetSP + targetEP,
+        ["potentialSP"] = potentialSP,
+        ["potentialEP"] = potentialEP,
+        ["potentialRP"] = potentialSP + potentialEP,
+    }
+end
+
+local ScobilityOnTheMusicWheel = function(self)
+    local player = (self:GetY() == 7) and "PlayerNumber_P2" or "PlayerNumber_P1"
+    local other = (self:GetY() == -7) and "PlayerNumber_P2" or "PlayerNumber_P1"
+    local title = self:GetParent():GetParent():GetChild("SongName"):GetChild("Title"):GetText()
+    -- Trace("ScobilityOnThisPlayer "..player.." "..title)
+    local focusPlayer = player
+    local split = false
+
+    if GAMESTATE:GetNumSidesJoined() == 1 then
+        split = true
+        if PROFILEMAN:IsPersistentProfile(other) then
+            focusPlayer = other
+        end
+    end
+    local pn = ToEnumShortString(focusPlayer)
+
+    if titleMap[title] and (SHOW_ALL_SONGS or SL[pn].ITLData["hashMap"][titleMap[title]]) then
+        local scobilityInfo = EvaluateChartForPlayer(focusPlayer, nil, titleMap[title])
+        if scobilityInfo then
+            if GAMESTATE:GetCurrentSong() and GAMESTATE:GetCurrentSong():GetDisplayMainTitle() == title then
+                Trace(title)
+                Trace(TableToString(scobilityInfo))
+            end
+            local potentialRP = "+" .. tostring(("%.0f"):format(scobilityInfo["potentialRP"]))
+            local targetEX = "@ " .. tostring(("%.2f"):format(scobilityInfo["targetEX"]))
+            if split then
+                if player == "PlayerNumber_P1" then
+                    self:settext(potentialRP .. " RP")
+                else
+                    self:settext(targetEX)
+                end
+            else
+                self:settext(potentialRP .. " " .. targetEX)
+            end
+            local colorization = 0.4 + math.log10(
+                (scobilityInfo["potentialRP"] > 1) and scobilityInfo["potentialRP"] or 1
+            ) * 0.15
+            self:diffuse(colorization, 0.4, colorization, 1)
+            self:visible(true)
+            return
+        end
+    end
+    self:visible(false)
+end
+
+
+local TweakRelevantMusicWheelItemActors = function(musicWheelItem)
+    local a0a = musicWheelItem:GetChild("SongName")
+    if not a0a then return nil end
+    local a0a1 = a0a:GetChild("Title")
+    if not a0a1 then return nil end
+    local a0b = musicWheelItem:GetChild("SongNormalPart")
+    if not a0b then return nil end
+    local a0b1 = a0b:GetChild("")
+    for i, ai in ipairs(a0b1) do
+        if ai then
+            local y = ai:GetY()
+            if (y == -7) or (y == 7) then
+                if not ai:GetCommand("Scobility") then
+                    ai:addcommand("Scobility", ScobilityOnTheMusicWheel)
+                    ai:addcommand("Set", ScobilityOnTheMusicWheel)
+                end
+            end
+        end
+    end
+end
+
+
+local CacheSpice = function()
+    if spiceUpdateInProgress then return end
+
+    if (GetTimeSinceStart() - spiceLastUpdatedRelative < spiceUpdateInterval) then
+        return
+    end
+
+    spiceUpdateInProgress = true
+    SM("scobility: Caching ITL" .. year .. " spice values...")
+
+    NETWORK:HttpRequest{
+        url="https://scobility.azurewebsites.net/catalog/" .. catalogName .. "/chart/all",
+        method="GET",
+        connectTimeout=10,
+        transferTimeout=10,
+        onResponse=function(response)
+            if response.statusCode then
+                local body = nil
+                local code = response.statusCode
+                if code ~= 200 then
+                    SM("scobility: Did not send ITL" .. year .. " spice values. (" .. tostring(code) .. ")")
+                    return
+                end
+
+                body = JsonDecode(response.body)
+                if not body.status then
+                    SM("scobility: Couldn't retrieve ITL" .. year .. " spice values.")
+                    return
+                end
+                if (body.data and not #body.data) then
+                    SM("scobility: No ITL" .. year .. " spice values retrieved.")
+                    return
+                end
+
+                SL.Global.spice = body.data
+                spiceLastUpdatedRelative = GetTimeSinceStart()
+                SM("scobility: ITL" .. year .. " spice values successfully cached.")
+                spiceUpdateInProgress = false
+            end
+        end,
+    }
+end
+
+local CachePathMap = function()
+    for _, _ in pairs(superPathMap) do return end
+    SM("scobility: Caching super song path map...")
+
+    for group in ivalues(SONGMAN:GetSongGroupNames()) do
+        local groupLower = string.lower(group)
+        if (string.find(groupLower, "itl online "..year) or
+            string.find(groupLower, "itl "..year)) then
+            for song in ivalues(SONGMAN:GetSongsInGroup(group)) do
+                local songPath = song:GetSongDir()
+                for steps in ivalues(song:GetAllSteps()) do
+                    -- I've been a nasty giiiiiirl, nasty.
+                    SL["P3"] = {["Streams"] = {}}
+                    ParseChartInfo(steps, "P3")
+                    local hash = SL["P3"].Streams.Hash
+                    if hash then
+                        local chartName = steps:GetChartName()
+                    
+                        -- Note that playing OUTSIDE of the ITL pack will result in 0 points for all upscores.
+                        -- Technically this number isn't displayed, but players can opt to swap the EX score in the
+                        -- wheel with this value instead if they prefer.
+                        function ParseNumbers(input)
+                                local num1, num2 = input:match("(%d+)%s+%(P%)%s+%+%s+(%d+)%s+%(S%)")
+                                return tonumber(num1) or nil, tonumber(num2) or nil
+                        end
+                    
+                        local passingPoints, maxScoringPoints = ParseNumbers(chartName)
+
+                        superPathMap[songPath] = hash
+                        superHashMap[hash] = {
+                            ["passingPoints"] = passingPoints,
+                            ["maxScoringPoints"] = maxScoringPoints,
+                        }
+                        titleMap[song:GetDisplayMainTitle()] = hash
+                        styleMap[hash] = (steps:GetStepsType() == "StepsType_Dance_Double") and "double" or "single"
+                        diffMap[hash] = tonumber(steps:GetMeter())
+                    end
+                end
+            end
+        end
+    end
+
+    SM("scobility: Cached super song path map: "..tostring(#superPathMap).." entries")
+    --Trace(TableToString(superPathMap))
+end
+
+local TL = function(x)
+    local n = 0
+    for _ in pairs(x) do n = n + 1 end
+    return n
+end
+
+local Recalculate = function(first)
+    if SL.Global.spice and #SL.Global.spice then
+        for player in ivalues(GAMESTATE:GetEnabledPlayers()) do
+            local pn = ToEnumShortString(player)
+            if SL[pn].ITLData["hashMap"] and (TL(SL[pn].ITLData["hashMap"]) >= 5) then
+                if first or not coefs[pn] then
+                    SM("scobility: Recalculating targets for " .. PROFILEMAN:GetPlayerName(player) .. "...")
+                    CalculatePlayerData(player)
+                end
+            else
+                Trace("scobility: Not enough data to calculate targets for " .. PROFILEMAN:GetPlayerName(player))
+            end
+        end
+    elseif spiceLastUpdatedRelative >= 0 then
+        SM("scobility: No spice to recalculate from")
+    end
+end
+
+afCache = Def.ActorFrame {
+    ModuleCommand=function(self)
+        CacheSpice()
+        CachePathMap()
+    end,
+}
+
+afWheel = Def.ActorFrame {
+    ModuleCommand=function(self)
+        CacheSpice()
+        CachePathMap()
+    end,
+	OnCommand=function(self)
+        Recalculate(true)
+        self:queuecommand("SetupScobilityOnTheMusicWheel")
+	end,
+	CurrentSongChangedMessageCommand=function(self)
+        Recalculate(false)
+        self:queuecommand("SetupScobilityOnTheMusicWheel")
+	end,
+    NewDownloadsCompletedMessageCommand=function(self)
+        superPathMap = {}
+        CachePathMap()
+    end,
+	SetupScobilityOnTheMusicWheelCommand=function(self)
+        local a0 = SCREENMAN:GetTopScreen()
+        if not a0 then return end
+        local a1 = a0:GetChild("MusicWheel")
+        if not a1 then return end
+        local a2 = a1:GetChild("MusicWheelItem")
+        if not a2 then return end
+        for i, ai in ipairs(a2) do
+            TweakRelevantMusicWheelItemActors(ai)
+        end
+    end
+}
+
+for player in ivalues(PlayerNumber) do
+    afWheel[#afWheel+1] = Def.ActorFrame {
+        PlayerJoinedMessageCommand=function(self)
+            self:visible(GAMESTATE:IsPlayerEnabled(player))
+            CalculatePlayerData(player)
+        end,
+        PlayerUnjoinedMessageCommand=function(self)
+            self:visible(GAMESTATE:IsPlayerEnabled(player))
+            local pn = ToEnumShortString(player)
+            coefs[pn] = nil
+        end,
+    }
+end
+
+t["ScreenTitleMenu"] = afCache
+t["ScreenSelectMusic"] = afWheel
+
+return t
