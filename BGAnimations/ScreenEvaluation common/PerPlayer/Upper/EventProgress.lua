@@ -17,12 +17,12 @@ local CreateRPGBody = function(rpgData)
 		gold = true,
 		jp = true
 	}
-	
+
 	local score = rpgData["score"]
 	local scoreDelta = rpgData["scoreDelta"]
 	local rate = rpgData["rate"]
 	local rateDelta = rpgData["rateDelta"]
-	
+
 	local qualifierImprovements = {}
 	local statImprovements = {}
 	for improvement in ivalues(rpgData["statImprovements"]) do
@@ -40,12 +40,12 @@ local CreateRPGBody = function(rpgData)
 			end
 		end
 	end
-	
+
 	local statsBody = string.format(
 		"Score: %.2f%% (%+.2f%%)\n"..
 		"Rate: %.2f (%+.2f)\n\n",
 		score, scoreDelta, rate, rateDelta)
-	
+
 	if #qualifierImprovements == 1 then
 			statsBody = statsBody .. qualifierImprovements[1] .. "\n"
 	elseif #qualifierImprovements == 2 then
@@ -54,7 +54,7 @@ local CreateRPGBody = function(rpgData)
 	for extraStats in ivalues(statImprovements) do
 		statsBody = statsBody .. extraStats .. "\n"
 	end
-	
+
 	return string.gsub(statsBody, "[\n\r]+$", "")
 end
 
@@ -188,6 +188,7 @@ logoFiles = findFiles(EventLogoDir,"png")
 if #logoFiles > 0 then	
 	logoImage = logoFiles[math.random(#logoFiles)]
 end
+rpgLogoImage = THEME:GetPathG("", "_VisualStyles/SRPG9/logo_alt (doubleres).png")
 
 local af = Def.ActorFrame{
 	Name="EventProgress"..pn,
@@ -201,7 +202,6 @@ local af = Def.ActorFrame{
 		if params.rpgData then
 			hasData = true
 			local rpgString = CreateRPGBody(params.rpgData)
-			
 			ScaleAndColorizeBody(
 				self:GetChild("BodyText"),
 				rpgString,
@@ -220,6 +220,7 @@ local af = Def.ActorFrame{
 					break
 				end
 			end
+			self:queuecommand("RPG")
 		-- TODO: Add support for when a song is in both RPG and ITL
 		elseif params.itlData and not hasData then
 			hasData = true
@@ -269,9 +270,26 @@ local af = Def.ActorFrame{
 	-- Random event logo
 	Def.Sprite {
 		Texture=logoImage,
+		Name="ITLLogo",
 		InitCommand=function(self)
 			self:zoom(0.2)
 			self:diffusealpha(0.2)
+		end,
+		RPGCommand=function(self)
+			self:visible(false)
+		end
+	},
+	
+	Def.Sprite {
+		Texture=rpgLogoImage,
+		Name="RPGLogo",
+		InitCommand=function(self)
+			self:zoom(0.2)
+			self:diffusealpha(0.2)
+			self:visible(false)
+		end,
+		RPGCommand=function(self)
+			self:visible(true)
 		end
 	},
 

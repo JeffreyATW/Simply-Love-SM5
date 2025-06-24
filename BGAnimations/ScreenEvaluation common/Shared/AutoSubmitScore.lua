@@ -257,7 +257,7 @@ local AutoSubmitRequestProcessor = function(res, overlay)
 							-- TODO(teejusb): Determine how we want to easily display EX scores.
 							-- For now just highlight blue because it's simple.
 							if showExScore then
-								entry:GetChild("Score"):diffuse(SL.JudgmentColors["FA+"][1])
+								entry:GetChild("Score"):diffuse(SL.JudgmentColors["ITG"][1])
 							else
 								entry:GetChild("Score"):diffuse(Color.White)
 							end
@@ -444,7 +444,7 @@ local af = Def.ActorFrame {
 		-- local eventAf = overlay:GetChild("AutoSubmitMaster"):GetChild("EventOverlay"):GetChild("P1EventAf")
 		-- eventAf:playcommand("Show", {data={
 		-- 	["rpg"] = {
-		-- 		["name"] = "SRPG8",
+		-- 		["name"] = "SRPG9",
 		-- 		["result"] = "score-added",
 		-- 		["rpgLeaderboard"] = {
 		-- 			{
