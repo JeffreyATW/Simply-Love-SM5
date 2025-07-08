@@ -188,7 +188,7 @@ logoFiles = findFiles(EventLogoDir,"png")
 if #logoFiles > 0 then	
 	logoImage = logoFiles[math.random(#logoFiles)]
 end
-rpgLogoImage = THEME:GetPathG("", "_VisualStyles/SRPG9/logo_alt (doubleres).png")
+local rpgLogoImage = THEME:GetPathG("", "_VisualStyles/SRPG9/logo_alt (doubleres).png")
 
 local af = Def.ActorFrame{
 	Name="EventProgress"..pn,
@@ -201,6 +201,24 @@ local af = Def.ActorFrame{
 	SetDataCommand=function(self, params)
 		if params.rpgData then
 			hasData = true
+			
+			-- check for dailies
+			if params.rpgData["questsCompleted"] then
+				for quest in ivalues(params.rpgData["questsCompleted"]) do
+					if string.find(string.upper(quest["title"]), "UNAFFILIATED DAILY") then
+						rpgLogoImage = THEME:GetPathG("", "Stamina RPG/daily (doubleres).png")
+					end
+					
+					if string.find(string.upper(quest["title"]), "SN DAILY") then
+						rpgLogoImage = THEME:GetPathG("", "Stamina RPG/daily_sn (doubleres).png")
+					elseif string.find(string.upper(quest["title"]), "DPRT DAILY") then
+						rpgLogoImage = THEME:GetPathG("", "Stamina RPG/daily_dprt (doubleres).png")
+					elseif string.find(string.upper(quest["title"]), "FE DAILY") then
+						rpgLogoImage = THEME:GetPathG("", "Stamina RPG/daily_fe (doubleres).png")
+					end
+				end
+			end
+			
 			local rpgString = CreateRPGBody(params.rpgData)
 			ScaleAndColorizeBody(
 				self:GetChild("BodyText"),
@@ -281,14 +299,14 @@ local af = Def.ActorFrame{
 	},
 	
 	Def.Sprite {
-		Texture=rpgLogoImage,
 		Name="RPGLogo",
 		InitCommand=function(self)
-			self:zoom(0.2)
-			self:diffusealpha(0.2)
+			self:zoom(0.13)
+			self:diffusealpha(0.25)
 			self:visible(false)
 		end,
 		RPGCommand=function(self)
+			self:Load(rpgLogoImage)
 			self:visible(true)
 		end
 	},

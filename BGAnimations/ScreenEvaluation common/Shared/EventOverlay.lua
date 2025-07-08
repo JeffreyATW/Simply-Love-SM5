@@ -315,28 +315,10 @@ local GetRpgPaneFunctions = function(eventAf, rpgData, player)
 					["rate"] = rate,
 					["rateDelta"] = rateDelta,
 					["statImprovements"] = progress["statImprovements"],
+					["questsCompleted"] = progress["questsCompleted"],
 				},
 			})
 		end
-	end
-	
-	-- Also pass the response data to the progress box.
-	local progressBox = SCREENMAN:GetTopScreen()
-			:GetChild("Overlay")
-			:GetChild("ScreenEval Common")
-			:GetChild(pn.."_AF_Upper")
-			:GetChild("EventProgress"..pn)
-	if progressBox ~= nil then
-		progressBox:playcommand("SetData",{
-			rpgData = {
-				["name"] = rpgData["name"],
-				["score"] = score,
-				["scoreDelta"] = scoreDelta,
-				["rate"] = rate,
-				["rateDelta"] = rateDelta,
-				["statImprovements"] = progress["statImprovements"],
-			},
-		})
 	end
 
 	table.insert(paneTexts, string.format(
